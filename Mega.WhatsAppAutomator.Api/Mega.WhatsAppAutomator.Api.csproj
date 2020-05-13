@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UserSecretsId>40bf3c11-12bf-448b-9543-2c72d53610e0</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <CefSharpAnyCpuSupport>true</CefSharpAnyCpuSupport>
+    <OutputPath>..\Output</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10"/>
+    <PackageReference Include="Selenium.WebDriver" Version="3.141.0"/>
+    <PackageReference Include="CefSharp.OffScreen" Version="81.3.20-pre"/>
+    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="81.0.4044.13800"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Mega.WhatsAppAutomator.Infraestructure\Mega.WhatsAppAutomator.Infraestructure.csproj"/>
+  </ItemGroup>
+</Project>
