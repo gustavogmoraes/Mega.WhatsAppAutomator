@@ -27,8 +27,8 @@ namespace Mega.WhatsAppAutomator.Infraestructure
                 await LoginOnEmulator(page);
             }
 
-            await StartQueueAsync(page);
-            await StartListeningToMessagesAsync();
+            StartQueue(page);
+            //await StartListeningToMessagesAsync();
         }
 
         private static async Task StartListeningToMessagesAsync()
@@ -36,9 +36,9 @@ namespace Mega.WhatsAppAutomator.Infraestructure
             await Task.Run(() => { });
         }
 
-        private static async Task StartQueueAsync(Page page)
+        private static void StartQueue(Page page)
         {
-            await AutomationQueue.StartQueueAsync(page);
+            AutomationQueue.StartQueue(page);
         }
 
         private static async Task<bool> CheckItsLoggedIn(Page page)

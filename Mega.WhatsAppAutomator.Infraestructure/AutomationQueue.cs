@@ -11,16 +11,16 @@ namespace Mega.WhatsAppAutomator.Infraestructure
     {
         public static void AddTask(WhatsAppWebTask task)
         {
-            TaskQueue.Add(task);
+            TaskQueue.Enqueue(task);
         }
 
-        public static async Task StartQueueAsync(Page page)
+        public static void StartQueue(Page page)
         {
             WhatsAppWebPage = page;
 
             if(TaskQueue == null)
             {
-                TaskQueue = new ConcurrentBag<WhatsAppWebTask>();
+                TaskQueue = new ConcurrentQueue<WhatsAppWebTask>();
             }
 
             Task.Run(async () => await QueueExecution());
@@ -30,7 +30,7 @@ namespace Mega.WhatsAppAutomator.Infraestructure
         {
             while(true) 
             {
-                if(TaskQueue.TryTake(out var task))
+                if(TaskQueue.TryDequeue(out var task))
                 {
                     switch(task.KindOfTask)
                     {
@@ -53,6 +53,6 @@ namespace Mega.WhatsAppAutomator.Infraestructure
 
         private static Page WhatsAppWebPage { get; set; }
 
-        private static ConcurrentBag<WhatsAppWebTask> TaskQueue { get; set; }
+        private static ConcurrentQueue<WhatsAppWebTask> TaskQueue { get; set; }
     }
 }
