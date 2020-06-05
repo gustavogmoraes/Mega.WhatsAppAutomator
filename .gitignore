@@ -353,3 +353,5 @@ Output/
 .dockerignore
 .DS_Store
 .idea/
+
+Mega.WhatsAppAutomator.Api/Properties/launchSettings.json
