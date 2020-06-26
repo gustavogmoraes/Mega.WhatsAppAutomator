@@ -68,5 +68,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         { 
             return TimeZoneInfo.ConvertTimeFromUtc(dateTime, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
         }
+
+        public static T[] ArrayAdd<T>(this T[] array, T item)
+        {
+            var list = array.ToList();
+            list.Add(item);
+
+            return list.ToArray();
+        }
     }
 }

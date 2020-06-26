@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Mega.WhatsAppAutomator.Api.ApiUtils;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -16,16 +18,15 @@ namespace Mega.WhatsAppAutomator.Api
         public static void Main(string[] args)
         {
             // Creates automation
-            AutomationStartup.Start().Wait(TimeSpan.FromMinutes(10));
+            Task.Run(AutomationStartup.Start);
             
             CreateHostBuilder(args).Build().Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+                .ConfigureWebHostDefaults(webBuilder => webBuilder
+                    .UsePort()
+                    .UseStartup<Startup>());
     }
 }

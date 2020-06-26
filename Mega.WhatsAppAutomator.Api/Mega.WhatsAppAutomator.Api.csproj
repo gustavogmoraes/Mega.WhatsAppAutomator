@@ -2,22 +2,15 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.1</TargetFramework>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <OutputPath>..\Output\</OutputPath>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-      <OutputPath>..\Output\</OutputPath>
+        <OutputPath>..\Output\</OutputPath>
+        <StartupObject>Mega.WhatsAppAutomator.Api.Program</StartupObject>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Mega.WhatsAppAutomator.Domain\Mega.WhatsAppAutomator.Domain.csproj" />
       <ProjectReference Include="..\Mega.WhatsAppAutomator.Infrastructure\Mega.WhatsAppAutomator.Infrastructure.csproj" />
     </ItemGroup>
-
-
 </Project>

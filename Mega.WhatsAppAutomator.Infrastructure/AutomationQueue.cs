@@ -37,7 +37,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 if(TaskQueue.TryDequeue(out var task))
                 {
                     var methodInfo = typeof(WhatsAppWebTasks)
-                        .GetMethods(BindingFlags.Static)
+                        .GetMethods()
                         .FirstOrDefault(method => method.Name == task.KindOfTask.ToString());
 
                     if(methodInfo != null)

@@ -3,7 +3,9 @@ using System.Runtime.InteropServices;
 using System;
 using System.IO;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
+using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
+using Extensions = PuppeteerSharp.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 {
@@ -11,21 +13,40 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
     {
         public static string CustomUserAgentForHeadless => @"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3641.0 Safari/537.36";
         public static string[] CustomsArgsForHeadless => new string[] { "--disable-gpu", "--no-sandbox", "--disable-extensions", "--proxy-server='direct://'", "--proxy-bypass-list=*" };
-        public static string UserDataDir => Path.Combine(PupeteerBasePath, "user-data-dir");
+        private static string UserDataDir => Path.Combine(PupeteerBasePath, "user-data-dir");
         public static BrowserFetcherOptions FetcherOptions => new BrowserFetcherOptions { Path = FetcherDownloadPath };
-        public static string FetcherDownloadPath => Path.Combine(PupeteerBasePath, "Browser");
-        public static string PupeteerBasePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PupeteerFiles");
-        public static string ExecutablePath => SolveExecutablePath();
+        private static string FetcherDownloadPath => Path.Combine(PupeteerBasePath, "Browser");
+        private static string PupeteerBasePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PupeteerFiles");
+        private static string ExecutablePath => SolveExecutablePath();
+        public static bool AmIRunningInDocker => Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
 
-        public static LaunchOptions GetLaunchOptions(bool headless) => new LaunchOptions
+        public static LaunchOptions GetLaunchOptions(bool headless)
         {
-            Headless = headless,
-            UserDataDir = PupeteerMetadata.UserDataDir,
-            ExecutablePath = PupeteerMetadata.ExecutablePath
-        };
+            var options = new LaunchOptions
+            {
+                Headless = headless,
+                UserDataDir = UserDataDir,
+                ExecutablePath = ExecutablePath
+            };
+
+            if (!AmIRunningInDocker)
+            {
+                return options;
+            }
+            
+            // These arguments are mandatory if running on container.
+            options.Args = options.Args.ArrayAdd("no-sandbox");
+            options.Headless = true;
+            
+            return options;
+        }
 
         private static string SolveExecutablePath()
         {
+            if (AmIRunningInDocker)
+            {
+                return Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH");
+            }
             var osPlatform = DevOpsHelper.GetOsPlatform();
             if(osPlatform == OSPlatform.Linux)
             {

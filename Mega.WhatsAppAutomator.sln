@@ -1,10 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mega.WhatsAppAutomator.Api", "Mega.WhatsAppAutomator.Api\Mega.WhatsAppAutomator.Api.csproj", "{487204BD-31D2-4B16-A331-F5FB557E4D58}"
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30104.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mega.WhatsAppAutomator.Api", "Mega.WhatsAppAutomator.Api\Mega.WhatsAppAutomator.Api.csproj", "{487204BD-31D2-4B16-A331-F5FB557E4D58}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mega.WhatsAppAutomator.Domain", "Mega.WhatsAppAutomator.Domain\Mega.WhatsAppAutomator.Domain.csproj", "{F353F1E3-189C-4AC9-8802-5D7C07131D5F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mega.WhatsAppAutomator.Domain", "Mega.WhatsAppAutomator.Domain\Mega.WhatsAppAutomator.Domain.csproj", "{F353F1E3-189C-4AC9-8802-5D7C07131D5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mega.WhatsAppAutomator.Infrastructure", "Mega.WhatsAppAutomator.Infrastructure\Mega.WhatsAppAutomator.Infrastructure.csproj", "{02570271-3EC6-47AC-9C19-007E236FD597}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mega.WhatsAppAutomator.Infrastructure", "Mega.WhatsAppAutomator.Infrastructure\Mega.WhatsAppAutomator.Infrastructure.csproj", "{02570271-3EC6-47AC-9C19-007E236FD597}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +27,11 @@ Global
 		{02570271-3EC6-47AC-9C19-007E236FD597}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02570271-3EC6-47AC-9C19-007E236FD597}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02570271-3EC6-47AC-9C19-007E236FD597}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2A799EEB-80A4-403D-9940-01A8333F677D}
 	EndGlobalSection
 EndGlobal

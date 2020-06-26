@@ -19,6 +19,7 @@ namespace Mega.WhatsAppAutomator.Api.Filters
                new[]{ AdminToken }.ToList().Contains(context.HttpContext.Request.Headers["ClientToken"]))
             {
                 //Proceed
+                return;
             }
 
             context.Result = new ForbidResult();

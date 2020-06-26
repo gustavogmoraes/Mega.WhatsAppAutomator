@@ -4,19 +4,13 @@
         <TargetFramework>netcoreapp3.1</TargetFramework>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <OutputPath>..\Output</OutputPath>
     </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <OutputPath>..\Output\</OutputPath>
-    </PropertyGroup>
-
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-      <OutputPath>..\Output\</OutputPath>
-    </PropertyGroup>
-
+    
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
       <PackageReference Include="PuppeteerSharp" Version="2.0.3" />
+      <PackageReference Include="PuppeteerSharp.Contrib.Extensions" Version="2.0.0" />
       <PackageReference Include="RavenDB.Client" Version="4.2.103" />
     </ItemGroup>
 
@@ -24,4 +18,10 @@
       <ProjectReference Include="..\Mega.WhatsAppAutomator.Domain\Mega.WhatsAppAutomator.Domain.csproj" />
     </ItemGroup>
 
+    <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
+      <Copy SourceFiles="..\Mega.WhatsAppAutomator.Infrastructure\Certificates\free.gsoftware.client.certificate.with.password.pfx" DestinationFolder="$(OutDir)" />
+    </Target>
+    <Target Name="CopyCustomContentOnPublish" AfterTargets="Publish">
+      <Copy SourceFiles="..\Mega.WhatsAppAutomator.Infrastructure\Certificates\free.gsoftware.client.certificate.with.password.pfx" DestinationFolder="$(PublishDir)" />
+    </Target>
 </Project>

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using PuppeteerSharp;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
+using PuppeteerSharp.Contrib.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -15,7 +16,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         public static async Task Start()
         {
-            await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
+            // Only necessary if not running on container, as the docker image setup downloads the browser and it's dependencies
+            // followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
+            if (!PupeteerMetadata.AmIRunningInDocker)
+            {
+                await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
+            }
 
             var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions(Headless));
             var page = await browser.NewPageAsync();
