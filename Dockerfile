@@ -3,6 +3,9 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 ENV ASPNETCORE_URLS=http://+:80;https://+:443;
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-unstable
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 
 WORKDIR /src

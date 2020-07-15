@@ -1,21 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Api.Filters;
-using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Server.IISIntegration;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Mega.WhatsAppAutomator.Api
 {
@@ -32,9 +20,9 @@ namespace Mega.WhatsAppAutomator.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSession();
-            
-            services.AddControllersWithViews (options => 
+            services.AddControllersWithViews (options =>
             {
+                //options.RequireHttpsPermanent = false;
                 options.Filters.Add (typeof (SessionFilter));
                 options.Filters.Add (typeof (ExceptionHandlerFilter));
             });

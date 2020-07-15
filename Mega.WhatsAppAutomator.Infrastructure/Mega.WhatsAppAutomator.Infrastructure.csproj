@@ -19,9 +19,9 @@
     </ItemGroup>
 
     <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
-      <Copy SourceFiles="..\Mega.WhatsAppAutomator.Infrastructure\Certificates\free.gsoftware.client.certificate.with.password.pfx" DestinationFolder="$(OutDir)" />
+        <Copy SourceFiles="..\Mega.WhatsAppAutomator.Infrastructure\Certificates\free.gsoftware.client.certificate.with.password.pfx" DestinationFolder="$(OutDir)" />
     </Target>
     <Target Name="CopyCustomContentOnPublish" AfterTargets="Publish">
-      <Copy SourceFiles="..\Mega.WhatsAppAutomator.Infrastructure\Certificates\free.gsoftware.client.certificate.with.password.pfx" DestinationFolder="$(PublishDir)" />
+        <Copy SourceFiles="..\Mega.WhatsAppAutomator.Infrastructure\Certificates\free.gsoftware.client.certificate.with.password.pfx" DestinationFolder="$(PublishDir)" />
     </Target>
 </Project>

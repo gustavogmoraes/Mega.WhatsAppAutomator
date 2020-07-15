@@ -7,10 +7,19 @@
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <OutputPath>..\Output\</OutputPath>
         <StartupObject>Mega.WhatsAppAutomator.Api.Program</StartupObject>
+        <UserSecretId>d8333c2b-a1c9-41e2-a578-0879b7e6d66d</UserSecretId>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Mega.WhatsAppAutomator.Domain\Mega.WhatsAppAutomator.Domain.csproj" />
       <ProjectReference Include="..\Mega.WhatsAppAutomator.Infrastructure\Mega.WhatsAppAutomator.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Update="Properties\appsettings.json">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
     </ItemGroup>
 </Project>

@@ -45,6 +45,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         {
             if (AmIRunningInDocker)
             {
+                Console.WriteLine($"Running in docker, returning path as {Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH")}");
                 return Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH");
             }
             var osPlatform = DevOpsHelper.GetOsPlatform();
