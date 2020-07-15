@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System;
 using System.Diagnostics;
 using System.Threading;
@@ -36,6 +36,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             StartQueue(page);
             //await StartListeningToMessagesAsync();
+            StartListeningToMessagesAsync(page);
         }
 
         private static async Task WaitForSetup(Page page, TimeSpan timeout)
@@ -54,9 +55,31 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
         }
 
-        private static async Task StartListeningToMessagesAsync()
-        {
-            await Task.Run(() => { });
+		private static async Task StartListeningToMessagesAsync(Page page)
+		{
+
+			await page.ClickOnElementAsync(WhatsAppWebMetadata.Unread);
+
+			await page.ExposeFunctionAsync("newChat", async (string text) =>
+			{
+				Console.WriteLine(text);
+			});
+
+
+            /* 
+             await _whatsAppPage.EvaluateFunctionAsync($@"() => {{
+                var observer = new MutationObserver((mutations) => {{
+                    for(var mutation of mutations) {{
+                        if(mutation.addedNodes.length && mutation.addedNodes[0].classList.value === '{WhatsAppMetadata.MessageLine}') {{
+                            newChat(mutation.addedNodes[0].querySelector('.copyable-text span').innerText);
+                        }}
+                    }}
+                }});
+                observer.observe(document.querySelector('{WhatsAppMetadata.ChatContainer}'), {{ attributes: false, childList: true, subtree: true }});
+            }}");
+            */
+
+            //await Task.Run(() => { });
         }
 
         private static void StartQueue(Page page)

@@ -10,8 +10,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public static string ChatContainer = "._2FbwG";
         public static string ChatInput = "._2S1VP";
         public static string SendMessageButton = "._1U1xa";
-        public static string SelectorMainDiv = "#app > div > div > div.landing-window > div.landing-main";
-        
+		public static string SelectorMainDiv = "#app > div > div > div.landing-window > div.landing-main";
+        public static string Unread = "._31gEB";
+
         public static string SendMessageExpression(string number) =>
             "var link = document.createElement('a');\n" +
            $"link.setAttribute('href', 'whatsapp://send?phone={number}');\n" +

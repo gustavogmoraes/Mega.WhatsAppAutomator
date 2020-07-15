@@ -60,7 +60,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             }
             else if (osPlatform == OSPlatform.Windows)
             {
-                
+                var winFolder = Directory.GetDirectories(FetcherDownloadPath).FirstOrDefault(x => x.ToLowerInvariant().Contains("win"));
+                return Path.Combine(FetcherDownloadPath, $@"{winFolder}/chrome-win/Chrome.exe");
             }
 
             throw new FileNotFoundException();

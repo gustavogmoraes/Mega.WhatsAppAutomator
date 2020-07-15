@@ -54,7 +54,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         public static async Task TypeOnElementAsync(this Page page, string elementSelector, string text) =>
             await (await page.QuerySelectorAsync(elementSelector)).TypeAsync(text, new TypeOptions { Delay = 0 });
 
-        public static async Task ClickOnElementAsync(this Page page, string elementSelector) => 
-            await (await page.QuerySelectorAsync(WhatsAppWebMetadata.SendMessageButton)).ClickAsync();
-    }
+		public static async Task ClickOnElementAsync(this Page page, string elementSelector)
+		{
+			//await (await page.QuerySelectorAsync(elementSelector))?.ClickAsync();
+
+			var element = await page.QuerySelectorAsync(elementSelector);
+			if (element != null)
+			{
+				await element.ClickAsync();
+			}
+		}
+	}
 }
