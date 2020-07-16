@@ -7,7 +7,6 @@
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <OutputPath>..\Output\</OutputPath>
         <StartupObject>Mega.WhatsAppAutomator.Api.Program</StartupObject>
-      <UserSecretsId>b748e846-9357-420d-8b9b-6179e39dff72</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
