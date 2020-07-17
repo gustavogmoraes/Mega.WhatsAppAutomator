@@ -1,16 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
-    <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <OutputPath>..\Output\</OutputPath>
-        <StartupObject>Mega.WhatsAppAutomator.Api.Program</StartupObject>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Mega.WhatsAppAutomator.Domain\Mega.WhatsAppAutomator.Domain.csproj" />
-      <ProjectReference Include="..\Mega.WhatsAppAutomator.Infrastructure\Mega.WhatsAppAutomator.Infrastructure.csproj" />
-    </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\Output\</OutputPath>
+    <StartupObject>Mega.WhatsAppAutomator.Api.Program</StartupObject>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileFile>..\Dockerfile</DockerfileFile>
+    <DockerfileContext>.</DockerfileContext>
+    <DockerfileRunArguments>-it --security-opt=seccomp:unconfined</DockerfileRunArguments>
+    <ContainerDevelopmentMode>Regular</ContainerDevelopmentMode>
+    <UserSecretsId>60982df7-a86e-49bf-8b98-cd27e7baa70d</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Mega.WhatsAppAutomator.Domain\Mega.WhatsAppAutomator.Domain.csproj" />
+    <ProjectReference Include="..\Mega.WhatsAppAutomator.Infrastructure\Mega.WhatsAppAutomator.Infrastructure.csproj" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
 </Project>

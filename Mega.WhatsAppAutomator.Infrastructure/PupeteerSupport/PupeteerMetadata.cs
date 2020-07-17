@@ -35,7 +35,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             }
             
             // These arguments are mandatory if running on container.
-            options.Args = options.Args.ArrayAdd("no-sandbox");
+            options.Args = CustomsArgsForHeadless;
             options.Headless = true;
             
             return options;

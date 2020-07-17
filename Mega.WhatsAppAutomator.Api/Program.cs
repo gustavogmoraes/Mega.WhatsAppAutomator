@@ -28,18 +28,18 @@ namespace Mega.WhatsAppAutomator.Api
 
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
-            // if (Convert.ToBoolean(Environment.GetEnvironmentVariable("IS_DEV_ENV")))
-            // {
-            //     return Host.CreateDefaultBuilder(args)
-            //         .ConfigureWebHostDefaults(webBuilder => webBuilder
-            //             .UseKestrel(opt => opt.Listen(IPAddress.Any, 80))
-            //             .UseStartup<Startup>());
-            // }
-            
-            return Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder => webBuilder
-                    .UsePort()
-                    .UseStartup<Startup>());
+             if (Convert.ToBoolean(Environment.GetEnvironmentVariable("IS_DEV_ENV")))
+             {
+                 return Host.CreateDefaultBuilder(args)
+                     .ConfigureWebHostDefaults(webBuilder => webBuilder
+                         .UseKestrel(opt => opt.Listen(IPAddress.Any, 80))
+                         .UseStartup<Startup>());
+             }
+             
+             return Host.CreateDefaultBuilder(args)
+                    .ConfigureWebHostDefaults(webBuilder => webBuilder
+                        .UsePort()
+                        .UseStartup<Startup>());
         }
     }
 }

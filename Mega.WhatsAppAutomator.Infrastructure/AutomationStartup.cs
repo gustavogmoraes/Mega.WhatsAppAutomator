@@ -12,7 +12,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 {
     public static class AutomationStartup
     {
-        private static bool Headless => false;
+        private static bool Headless => true;
 
         public static async Task Start()
         {
@@ -20,11 +20,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             // followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
             if (!PupeteerMetadata.AmIRunningInDocker)
             {
+                //await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
                 await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
             }
 
+            //var opts = new LaunchOptions
+            //{
+            //    Headless = true,
+            //    Args = PupeteerMetadata.CustomsArgsForHeadless
+            //};
+            //var browser = await Puppeteer.LaunchAsync(opts);
             var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions(Headless));
             var page = await browser.NewPageAsync();
+
 
             await NavigateToWhatsAppWebPage(page);
 
