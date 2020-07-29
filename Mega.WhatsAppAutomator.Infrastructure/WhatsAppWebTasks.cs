@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Domain.Objects;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
@@ -11,7 +12,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(message.Number);
             
-            //Humanize
             await page.EvaluateExpressionAsync(openChatExpression);
             
             await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, " " + RandomizeText(message.Text));
@@ -21,7 +21,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static string RandomizeText(string text)
         {
-            return text;
+            return Regex.Unescape(text);
         }
     }
 }

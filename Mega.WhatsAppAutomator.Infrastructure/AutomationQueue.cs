@@ -34,47 +34,58 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Task.Run(async () => await QueueExecution());
         }
 
+        private static List<ToBeSent> GetMessagesToBeSent()
+        {
+            List<ToBeSent> toBeSentMessages;
+            using (var session = Stores.MegaWhatsAppApi.OpenSession())
+            {
+                toBeSentMessages = session.Query<ToBeSent>()
+                    .OrderBy(x => x.EntryTime)
+                    .Take(50)
+                    .ToList();
+            }
+
+            return toBeSentMessages;
+        }
+
         private static async Task QueueExecution()
         {
-            while(true) 
+            while (true)
             {
-                if(TaskQueue.TryDequeue(out var task))
+                var toBeSentMessages = GetMessagesToBeSent();
+                if (toBeSentMessages.Any())
                 {
-                    Console.WriteLine($"Found task: message to {((Message)task.TaskData).Number}");
+                    SendListOfMessages(toBeSentMessages);
+                }
+                //if(TaskQueue.TryDequeue(out var task))
+                //{
+                //    Console.WriteLine($"Found task: message to {((Message)task.TaskData).Number}");
 
-                    // var listOfMessages = TreatLongMessage((Message)task.TaskData);
-                    // foreach (var message in listOfMessages)
-                    // {
-                    //     await TextNowTasks.SendMessage(Page, message).ConfigureAwait(false);
-                    //     await DelegateSendMessageToMobilePhone(message);
-                    //     
-                    //     Thread.Sleep(TimeSpan.FromSeconds(5));
-                    // }
-                    
-                    var methodInfo = typeof(WhatsAppWebTasks)
-                        .GetMethods()
-                        .FirstOrDefault(method => method.Name == task.KindOfTask.ToString());
+                //    var methodInfo = typeof(WhatsAppWebTasks)
+                //        .GetMethods()
+                //        .FirstOrDefault(method => method.Name == task.KindOfTask.ToString());
 
-                    if(methodInfo != null)
-                    {
-                        Console.WriteLine($"Executing ...");
-                        await ((Task)methodInfo.Invoke(null, new[] { Page, task.TaskData })).ConfigureAwait(false);
-                        Console.WriteLine($"Done");
-                    }
+                //    if(methodInfo != null)
+                //    {
+                //        Console.WriteLine($"Executing ...");
+                //        await ((Task)methodInfo.Invoke(null, new[] { Page, task.TaskData })).ConfigureAwait(false);
+                //        Console.WriteLine($"Done");
+                //    }
+                //};
 
-                    // var carrier = await Portabilidade.GetCarrier(((Message) task.TaskData).Number);
-                    // if(!carrier.HasValue || carrier != Carrier.Tim)
-                    // {
-                    //     
-                    // }
-                    // else
-                    // {
-                    //     await DelegateSendMessageToMobilePhone((Message) task.TaskData);
-                    // }
-                };
-
-                Thread.Sleep(500);
+                Thread.Sleep(TimeSpan.FromMinutes(1.5));
             }
+        }
+
+        private static void SendListOfMessages(List<ToBeSent> toBeSentMessages)
+        {
+            foreach (var message in toBeSentMessages)
+            {
+                SendMessage(message.Message);
+                Thread.Sleep(TimeSpan.FromSeconds(2));
+            }
+
+            TickSentMessages(toBeSentMessages);
         }
 
         private static List<Message> TreatLongMessage(Message message)
