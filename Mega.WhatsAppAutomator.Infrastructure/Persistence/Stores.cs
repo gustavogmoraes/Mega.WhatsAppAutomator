@@ -14,8 +14,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Persistence
         private const string UrlCloud = @"https://a.free.gsoftware.ravendb.cloud/";
         private const string CertificateFileName = "free.gsoftware.client.certificate.with.password.pfx";
         private const string CertificatePassword = "8FF4A485E3D110558EF44DAA5347761E";
-        //private static string MainDatabase = Utils.Extensions.EnvironmentIsDevelopment() ? "Mega.WhatsAppApi.Dev" : "Mega.WhatsAppApi";
-        private static string MainDatabase = "Mega.WhatsAppApi";
+        private static string MainDatabase = Utils.Extensions.EnvironmentIsDevelopment() ? "Mega.WhatsAppApi.Dev" : "Mega.WhatsAppApi";
+        //private static string MainDatabase = "Mega.WhatsAppApi";
         private static string ClientDatabase => GetClientDatabaseName();
 
         private static string GetClientDatabaseName()

@@ -58,7 +58,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         /// <returns></returns>
         public static bool EnvironmentIsDevelopment()
         {
-            return Environment.UserName == "Gustavo Moraes";
+            return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
         }
 
         /// <summary>

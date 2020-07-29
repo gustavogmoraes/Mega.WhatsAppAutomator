@@ -21,10 +21,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             //
             
             await SendHumanizedMessage(page, message.Text);
-
-            // await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, " " + message.Text);
-            //
-            // await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
         }
 
         private static async Task SendHumanizedMessage(Page page, string messageText)
@@ -42,7 +38,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             //await page.PressShiftEnter();
             // The message
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 1);
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 1, useParser: true);
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
             Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 3)));
             //

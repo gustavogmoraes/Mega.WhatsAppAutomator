@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -51,9 +52,28 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             }
         }
 
-        public static async Task TypeOnElementAsync(this Page page, string elementSelector, string text, int? delayInMs = null)
+        public static async Task TypeOnElementAsync(this Page page, string elementSelector, string text, int? delayInMs = null, bool useParser = false)
         {
-            await (await page.QuerySelectorAsync(elementSelector)).TypeAsync(text, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
+            if (!useParser)
+            {
+                await page.WaitForSelectorAsync(elementSelector);
+                
+                var element = await page.QuerySelectorAsync(elementSelector);
+                await element.TypeAsync(text, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
+                
+                return;
+            }
+
+            var pieces = text.Split("\r\n").ToList();
+            foreach (var piece in pieces)
+            {
+                await page.WaitForSelectorAsync(elementSelector);
+                
+                var element = await page.QuerySelectorAsync(elementSelector);
+                await element.TypeAsync(piece, new TypeOptions { Delay = delayInMs });
+
+                await page.PressShiftEnterAsync();
+            }
         }
 
         // This is in ms
@@ -73,7 +93,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 			}
 		}
         
-        public static async Task PressShiftEnter(this Page page)
+        public static async Task PressShiftEnterAsync(this Page page)
         {
             await page.Keyboard.DownAsync(Key.Shift);
             await page.Keyboard.PressAsync(Key.Enter);
