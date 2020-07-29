@@ -1,4 +1,5 @@
 using System;
+using Mega.WhatsAppAutomator.Api.ApiUtils;
 using Mega.WhatsAppAutomator.Api.Filters;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -37,7 +38,7 @@ namespace Mega.WhatsAppAutomator.Api
                 app.UseDeveloperExceptionPage();
             }
             
-            if (!Convert.ToBoolean(Environment.GetEnvironmentVariable("IS_DEV_ENV")))
+            if (env.IsProduction())
             {
                 app.UseHttpsRedirection();
             }

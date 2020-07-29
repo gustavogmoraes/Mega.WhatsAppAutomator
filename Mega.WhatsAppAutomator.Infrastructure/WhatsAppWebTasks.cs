@@ -10,10 +10,18 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public static async Task SendMessage(Page page, Message message)
         {
             var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(message.Number);
-
+            
+            //Humanize
             await page.EvaluateExpressionAsync(openChatExpression);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, message.Text);
+            
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, " " + RandomizeText(message.Text));
+            
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+        }
+
+        private static string RandomizeText(string text)
+        {
+            return text;
         }
     }
 }

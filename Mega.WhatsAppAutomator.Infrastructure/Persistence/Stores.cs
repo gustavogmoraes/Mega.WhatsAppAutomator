@@ -14,7 +14,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Persistence
         private const string UrlCloud = @"https://a.free.gsoftware.ravendb.cloud/";
         private const string CertificateFileName = "free.gsoftware.client.certificate.with.password.pfx";
         private const string CertificatePassword = "8FF4A485E3D110558EF44DAA5347761E";
-        private static string MainDatabase = Utils.Extensions.EnvironmentIsDevelopment() ? "Mega.WhatsAppApi.Dev" : "Mega.WhatsAppApi";
+        //private static string MainDatabase = Utils.Extensions.EnvironmentIsDevelopment() ? "Mega.WhatsAppApi.Dev" : "Mega.WhatsAppApi";
+        private static string MainDatabase = "Mega.WhatsAppApi";
         private static string ClientDatabase => GetClientDatabaseName();
 
         private static string GetClientDatabaseName()
@@ -39,7 +40,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Persistence
         /// Gets main document store.
         /// </summary>
         /// <returns>Return this document store.</returns>
-        public static IDocumentStore MegaWhatsAppApi => DocumentStores[MainDatabase] ?? CreateNewDocumentStore(MainDatabase);
+        public static IDocumentStore MegaWhatsAppApi =>
+            DocumentStores.ContainsKey(MainDatabase)
+                ? DocumentStores[MainDatabase]
+                : CreateNewDocumentStore(MainDatabase);
 
         /// <summary>
         /// Gets automator document store for this client.
@@ -68,7 +72,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Persistence
             {
                 Urls = new[] { UrlCloud },
                 Database = databaseName,
-                Certificate = new X509Certificate2(certificatePath, CertificatePassword.ToSecureString())
+                Certificate = new X509Certificate2(certificatePath, CertificatePassword)
             };
 
             documentStore.Initialize();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Net.Http;
@@ -66,7 +67,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         /// <returns>The converted datetime.</returns>
         public static DateTime ToBraziliaDateTime(this DateTime dateTime) 
         { 
-            return TimeZoneInfo.ConvertTimeFromUtc(dateTime, TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time"));
+            return TimeZoneInfo.ConvertTimeFromUtc(dateTime, TimeZoneInfo.FindSystemTimeZoneById("Brazil/East"));
         }
 
         public static T[] ArrayAdd<T>(this T[] array, T item)
@@ -75,6 +76,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
             list.Add(item);
 
             return list.ToArray();
+        }
+
+        public static IEnumerable<string> SplitOnChunks(this string str, int chunkSize)
+        {
+            return Enumerable.Range(0, str.Length / chunkSize)
+                .Select(i => str.Substring(i * chunkSize, chunkSize));
         }
     }
 }

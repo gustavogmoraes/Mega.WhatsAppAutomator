@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using PuppeteerSharp;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
+using Mega.WhatsAppAutomator.Infrastructure.TextNow;
+using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp.Contrib.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
@@ -13,38 +15,59 @@ namespace Mega.WhatsAppAutomator.Infrastructure
     public static class AutomationStartup
     {
         private static bool Headless => true;
+        
+        public static bool SmsReady { get; set; }
 
-        public static async Task Start()
+        public static async Task StartSms()
         {
-            // Only necessary if not running on container, as the docker image setup downloads the browser and it's dependencies
-            // followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
-            if (!PupeteerMetadata.AmIRunningInDocker)
+            var runningInDocker = PupeteerMetadata.AmIRunningInDocker;
+            if (!runningInDocker)
             {
-                //await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
                 await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
             }
+            
+            Console.WriteLine($"Trying to launch");
+            var launchOptions = PupeteerMetadata.GetLaunchOptions(Headless);
 
-            //var opts = new LaunchOptions
-            //{
-            //    Headless = true,
-            //    Args = PupeteerMetadata.CustomsArgsForHeadless
-            //};
-            //var browser = await Puppeteer.LaunchAsync(opts);
+            var browser = await Puppeteer.LaunchAsync(launchOptions);
+            var page = await browser.NewPageAsync();
+            Console.WriteLine($"Launched, now going to page");
+
+            await NavigateToTextNowPage(page);
+            
+            //await Portabilidade.Start(browser);
+            SmsReady = true;
+            StartQueue(page);
+        }
+        
+        public static async Task Start()
+        {
+            var runningInDocker = PupeteerMetadata.AmIRunningInDocker;
+            // Only necessary if not running on container, as the docker image setup downloads the browser and it's dependencies
+            // followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
+            if (!runningInDocker)
+            {
+                await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
+            }
+            
+            Console.WriteLine($"Trying to launch");
             var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions(Headless));
             var page = await browser.NewPageAsync();
-
-
+            Console.WriteLine($"Launched, now going to page");
             await NavigateToWhatsAppWebPage(page);
 
-            if(!await CheckItsLoggedIn(page))
+            var amILogged = await CheckItsLoggedIn(page);
+            Console.WriteLine(amILogged ? "I am logged" : "I AM NOT LOGGED IN");
+            if(!amILogged)
             {
                 await GetQrCode(page);
+                Console.WriteLine("Waiting for QrCode scan");
                 await WaitForSetup(page, TimeSpan.FromMinutes(5));
             }
 
             StartQueue(page);
             //await StartListeningToMessagesAsync();
-            StartListeningToMessagesAsync(page);
+            //StartListeningToMessagesAsync(page);
         }
 
         private static async Task WaitForSetup(Page page, TimeSpan timeout)
@@ -72,22 +95,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 			{
 				Console.WriteLine(text);
 			});
-
-
-            /* 
-             await _whatsAppPage.EvaluateFunctionAsync($@"() => {{
-                var observer = new MutationObserver((mutations) => {{
-                    for(var mutation of mutations) {{
-                        if(mutation.addedNodes.length && mutation.addedNodes[0].classList.value === '{WhatsAppMetadata.MessageLine}') {{
-                            newChat(mutation.addedNodes[0].querySelector('.copyable-text span').innerText);
-                        }}
-                    }}
-                }});
-                observer.observe(document.querySelector('{WhatsAppMetadata.ChatContainer}'), {{ attributes: false, childList: true, subtree: true }});
-            }}");
-            */
-
-            //await Task.Run(() => { });
         }
 
         private static void StartQueue(Page page)
@@ -116,15 +123,48 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 Height = 720,
                 DeviceScaleFactor = 1,
                 IsLandscape = true,
-                IsMobile = false
+                IsMobile = true
             });
             
             await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
             await page.GoToAsync(WhatsAppWebMetadata.WhatsAppURL);
         }
+        
+        private static async Task NavigateToTextNowPage(Page page)
+        {
+            await page.SetViewportAsync(new ViewPortOptions
+            {
+                Width = 1600,
+                Height = 900,
+                DeviceScaleFactor = 1
+            });
+            
+            await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
+            await page.GoToAsync("https://www.textnow.com/login");
+
+            var googleLoginSelector = "#google-login";
+            var amILoggedIn = await page.QuerySelectorAsync(googleLoginSelector) == null;
+            if (amILoggedIn)
+            {
+                return;
+            }
+            
+            await page.ClickOnElementAsync(googleLoginSelector);
+            await page.WaitForNavigationAsync();
+
+            await page.TypeOnElementAsync("#identifierId", "gustavogmoraes2");
+            await page.ClickOnElementAsync("#identifierNext > div > button > div.VfPpkd-RLmnJb");
+
+            var passwordSelector = "#password > div.aCsJod.oJeWuf > div > div.Xb9hP > input";
+            await page.WaitForSelectorAsync(passwordSelector);
+            Thread.Sleep(TimeSpan.FromSeconds(2));
+            await page.TypeOnElementAsync(passwordSelector, "Gustavo26@");
+            await page.ClickOnElementAsync("#passwordNext > div > button > div.VfPpkd-RLmnJb");
+        }
 
         public static async Task GetQrCode(Page page)
         {
+            Console.WriteLine("Getting QrCode");
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = (int?)Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
             
             if(!Directory.Exists(FileManagement.ScreenshotsDirectory))
@@ -133,6 +173,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
 
             var fileName = Path.Combine(FileManagement.ScreenshotsDirectory, "QrCode.jpg");
+            Console.WriteLine($"Saved file at {fileName}");
             await page.ScreenshotAsync(fileName, new ScreenshotOptions { Clip = await page.GetElementClipAsync(WhatsAppWebMetadata.SelectorMainDiv) });
         }
     }

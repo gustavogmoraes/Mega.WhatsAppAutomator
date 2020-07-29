@@ -1,16 +1,23 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using PuppeteerSharp;
 using Mega.WhatsAppAutomator.Infrastructure.Objects;
 using System.Reflection;
+using Mega.WhatsAppAutomator.Domain.Objects;
+using Mega.WhatsAppAutomator.Infrastructure.Enums;
+using Mega.WhatsAppAutomator.Infrastructure.Persistence;
+using Mega.WhatsAppAutomator.Infrastructure.TextNow;
+using Mega.WhatsAppAutomator.Infrastructure.Utils;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
     public static class AutomationQueue
     {
-        private static Page WhatsAppWebPage { get; set; }
+        private static Page Page { get; set; }
         private static ConcurrentQueue<WhatsAppWebTask> TaskQueue { get; set; }
 
         public static void AddTask(WhatsAppWebTask task)
@@ -20,12 +27,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         public static void StartQueue(Page page)
         {
-            WhatsAppWebPage = page;
+            Page = page;
 
-            if(TaskQueue == null)
-            {
-                TaskQueue = new ConcurrentQueue<WhatsAppWebTask>();
-            }
+            TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
 
             Task.Run(async () => await QueueExecution());
         }
@@ -36,17 +40,81 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 if(TaskQueue.TryDequeue(out var task))
                 {
+                    Console.WriteLine($"Found task: message to {((Message)task.TaskData).Number}");
+
+                    // var listOfMessages = TreatLongMessage((Message)task.TaskData);
+                    // foreach (var message in listOfMessages)
+                    // {
+                    //     await TextNowTasks.SendMessage(Page, message).ConfigureAwait(false);
+                    //     await DelegateSendMessageToMobilePhone(message);
+                    //     
+                    //     Thread.Sleep(TimeSpan.FromSeconds(5));
+                    // }
+                    
                     var methodInfo = typeof(WhatsAppWebTasks)
                         .GetMethods()
                         .FirstOrDefault(method => method.Name == task.KindOfTask.ToString());
 
                     if(methodInfo != null)
                     {
-                        await ((Task)methodInfo.Invoke(null, new[] { WhatsAppWebPage, task.TaskData })).ConfigureAwait(false);
+                        Console.WriteLine($"Executing ...");
+                        await ((Task)methodInfo.Invoke(null, new[] { Page, task.TaskData })).ConfigureAwait(false);
+                        Console.WriteLine($"Done");
                     }
+
+                    // var carrier = await Portabilidade.GetCarrier(((Message) task.TaskData).Number);
+                    // if(!carrier.HasValue || carrier != Carrier.Tim)
+                    // {
+                    //     
+                    // }
+                    // else
+                    // {
+                    //     await DelegateSendMessageToMobilePhone((Message) task.TaskData);
+                    // }
                 };
 
                 Thread.Sleep(500);
+            }
+        }
+
+        private static List<Message> TreatLongMessage(Message message)
+        {
+            var listOfMessages = new List<Message>();
+            if (message.Text.Length > 150)
+            {
+                var text = message.Text;
+                var chunks = text.SplitOnChunks(150);
+
+                foreach (var chunk in chunks)
+                {
+                    listOfMessages.Add(new Message
+                    {
+                        Number = message.Number,
+                        Text = chunk
+                    });
+                }
+            }
+            else
+            {
+                listOfMessages.Add(message);
+            }
+
+            return listOfMessages;
+        }
+
+        private static async Task DelegateSendMessageToMobilePhone(Message message)
+        {
+            using (var session = Stores.MegaWhatsAppApi.OpenAsyncSession())
+            {
+                await session.StoreAsync(new ToBeSent
+                {
+                    Message = message,
+                    EntryTime = DateTime.UtcNow.ToBraziliaDateTime()
+                });
+
+                await session.SaveChangesAsync();
+                
+                Console.WriteLine($"Message to {message.Number} delegated via Mega.SmsAutomator");
             }
         }
     }

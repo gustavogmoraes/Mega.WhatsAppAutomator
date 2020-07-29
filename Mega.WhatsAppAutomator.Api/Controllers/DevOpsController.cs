@@ -16,9 +16,17 @@ namespace Mega.WhatsAppAutomator.Api.Controllers
             File(FileManagement.GetLastTakenQrCode(), "image/jpeg", "QrCode.jpg");
 
         [HttpGet("[action]")]
-        public async Task<ActionResult> RestartAutomation()
+        public ActionResult RestartAutomation()
         {
-            await AutomationStartup.Start();
+            Task.Run(AutomationStartup.Start);
+
+            return Ok();
+        }
+        
+        [HttpGet("[action]")]
+        public ActionResult StartSmsAutomator()
+        {
+            Task.Run(AutomationStartup.StartSms);
 
             return Ok();
         }

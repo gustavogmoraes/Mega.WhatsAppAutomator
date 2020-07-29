@@ -1,0 +1,31 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2513
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fmodern\fcharset0 Courier;}
+{\colortbl;\red255\green255\blue255;\red134\green156\blue255;\red30\green31\blue41;}
+{\*\expandedcolortbl;;\csgenericrgb\c52549\c61176\c100000;\csgenericrgb\c11765\c12157\c16078;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs26 \cf2 \cb3 #FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS base\
+# --------------------------- Setting up Puppeteer dependencies ---------------------------------\
+#ARG CHROME_VERSION="84.0.4147.89-1"\
+#RUN apt-get update && apt-get -f install && apt-get -y install wget gnupg2 apt-utils\
+##RUN wget --no-verbose -O /tmp/chrome.deb http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_$\{CHROME_VERSION\}_amd64.deb \\\
+#RUN wget --no-verbose -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \\\
+#&& apt-get update \\\
+#&& apt-get install -y /tmp/chrome.deb --no-install-recommends --allow-downgrades fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \\\
+#&& rm /tmp/chrome.deb\
+#\
+#ENV PUPPETEER_EXECUTABLE_PATH "/usr/bin/google-chrome"\
+### -----------------------------------------------------------------------------------------------\
+#\
+## Add user, so we don't need --no-sandbox.\
+#RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \\\
+#    && mkdir -p /home/pptruser/Downloads \\\
+#    && chown -R pptruser:pptruser /home/pptruser\
+#    \
+#RUN usermod -G root pptruser\
+#RUN chown -R pptruser:pptruser /app\
+\
+# Run everything after as non-privileged user.\
+#USER pptruser\
+}

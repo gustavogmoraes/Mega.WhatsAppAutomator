@@ -16,7 +16,6 @@ namespace Mega.WhatsAppAutomator.Api.Controllers
         {
             AutomationQueue.AddTask(new WhatsAppWebTask
             {
-                KindOfTask = KindOfWhatsAppWebTask.SendMessage,
                 TaskData = message
             });
 
