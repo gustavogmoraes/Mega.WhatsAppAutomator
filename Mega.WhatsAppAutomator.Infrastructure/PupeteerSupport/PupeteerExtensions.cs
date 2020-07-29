@@ -64,7 +64,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 return;
             }
 
-            var pieces = text.Split("\r\n").ToList();
+            var pieces = text.Split("\n\r").ToList();
             foreach (var piece in pieces)
             {
                 await page.WaitForSelectorAsync(elementSelector);
