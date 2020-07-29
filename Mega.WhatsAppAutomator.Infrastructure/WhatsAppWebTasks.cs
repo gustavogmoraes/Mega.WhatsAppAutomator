@@ -30,23 +30,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             var clientName = "Laboratório HLAGyn";
             
             // Greetings
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedGreeting(clientName));
-            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 5)));
+            // await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedGreeting(clientName));
+            // await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+            // Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 5)));
             //
             
-            //await page.PressShiftEnter();
             // The message
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 10, useParser: true);
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 1, useParser: true);
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 3)));
+            //Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 3)));
             //
             
             // Farewell
-            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell(clientName));
-            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+            // await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
+            // await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell(clientName));
+            // await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
             //
         }
 
