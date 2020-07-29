@@ -27,6 +27,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
+            Thread.Sleep(TimeSpan.FromSeconds(2));
             var clientName = "Laboratório HLAGyn";
             
             // Greetings
