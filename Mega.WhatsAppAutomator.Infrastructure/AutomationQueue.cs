@@ -55,7 +55,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 var toBeSentMessages = GetMessagesToBeSent();
                 if (toBeSentMessages.Any())
                 {
-                    SendListOfMessages(toBeSentMessages);
+                    await SendListOfMessages(Page, toBeSentMessages);
                 }
                 //if(TaskQueue.TryDequeue(out var task))
                 //{
@@ -77,15 +77,35 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
         }
 
-        private static void SendListOfMessages(List<ToBeSent> toBeSentMessages)
+        private static async Task SendListOfMessages(Page page, List<ToBeSent> toBeSentMessages)
         {
             foreach (var message in toBeSentMessages)
             {
-                SendMessage(message.Message);
+                await SendMessage(page, message.Message);
                 Thread.Sleep(TimeSpan.FromSeconds(2));
             }
 
-            TickSentMessages(toBeSentMessages);
+            await TickSentMessages(toBeSentMessages);
+        }    
+
+        private static async Task TickSentMessages(List<ToBeSent> sentMessages)
+        {
+            using(var session = Stores.MegaWhatsAppApi.OpenSession())
+            {
+                sentMessages.ForEach(x => session.Delete(x.Id)); 
+                session.Advanced.DocumentStore.MassInsert(sentMessages.Select(x => new Sent
+                {
+                    Message = x.Message,
+                    TimeSent = DateTime.UtcNow.ToBraziliaDateTime() 
+                }).ToList(), processLoopOnDatabase: true);
+                
+                session.SaveChanges();
+            }
+        }
+
+        private static async Task SendMessage(Page page, Message message)
+        {
+            await WhatsAppWebTasks.SendMessage(page, message);
         }
 
         private static List<Message> TreatLongMessage(Message message)

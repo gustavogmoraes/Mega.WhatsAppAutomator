@@ -8,6 +8,7 @@ using System.Security;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Raven.Client.Documents;
 
 namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 {
@@ -82,6 +83,36 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         {
             return Enumerable.Range(0, str.Length / chunkSize)
                 .Select(i => str.Substring(i * chunkSize, chunkSize));
+        }
+        
+        public static void MassInsert<T>(this IDocumentStore store, IList<T> list, bool processLoopOnDatabase = false)
+            where T: class, new()
+        {
+            if (processLoopOnDatabase)
+            {
+                using (var bulkInsert = store.BulkInsert())
+                {
+                    foreach (var item in list)
+                    {
+                        bulkInsert.Store(item);
+                    }
+                }
+                return;
+            }
+
+            using (var session = store.OpenSession())
+            {
+                list.ToList().ForEach(item => session.Store(item));
+                session.SaveChanges();
+            }
+        }
+        
+        public static T Random<T>(this IEnumerable<T> input)
+        {
+            var random = new Random();
+            var list = input.ToList();
+            
+            return list.ElementAt(random.Next(0, list.Count));
         }
     }
 }
