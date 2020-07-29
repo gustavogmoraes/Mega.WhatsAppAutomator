@@ -36,17 +36,21 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static List<ToBeSent> GetMessagesToBeSent()
         {
-            List<ToBeSent> toBeSentMessages;
             using (var session = Stores.MegaWhatsAppApi.OpenSession())
             {
-                toBeSentMessages = session.Query<ToBeSent>()
+                ClientConfiguration = session.Query<Client>()
+                    .Where(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1")
+                    .Select(x => x.SendMessageConfiguration)
+                    .FirstOrDefault();
+                
+                return session.Query<ToBeSent>()
                     .OrderBy(x => x.EntryTime)
-                    .Take(50)
+                    .Take(ClientConfiguration.MessagesPerCycle)
                     .ToList();
             }
-
-            return toBeSentMessages;
         }
+
+        public static SendMessageConfiguration ClientConfiguration { get; set; }
 
         private static async Task QueueExecution()
         {
@@ -57,23 +61,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 {
                     await SendListOfMessages(Page, toBeSentMessages);
                 }
-                //if(TaskQueue.TryDequeue(out var task))
-                //{
-                //    Console.WriteLine($"Found task: message to {((Message)task.TaskData).Number}");
 
-                //    var methodInfo = typeof(WhatsAppWebTasks)
-                //        .GetMethods()
-                //        .FirstOrDefault(method => method.Name == task.KindOfTask.ToString());
-
-                //    if(methodInfo != null)
-                //    {
-                //        Console.WriteLine($"Executing ...");
-                //        await ((Task)methodInfo.Invoke(null, new[] { Page, task.TaskData })).ConfigureAwait(false);
-                //        Console.WriteLine($"Done");
-                //    }
-                //};
-
-                Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(2, 28)));
+                Thread.Sleep(TimeSpan.FromSeconds(ClientConfiguration.MaximumDelayBetweenCycles));
             }
         }
 

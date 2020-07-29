@@ -59,7 +59,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         // This is in ms
         private static int GetRandomDelay()
         {
-            return new Random().Next(50, 200);
+            return new Random().Next(50, 150);
         }
 
 		public static async Task ClickOnElementAsync(this Page page, string elementSelector)
@@ -72,5 +72,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 				await element.ClickAsync();
 			}
 		}
+        
+        public static async Task PressShiftEnter(this Page page)
+        {
+            await page.Keyboard.DownAsync(Key.Shift);
+            await page.Keyboard.PressAsync(Key.Enter);
+            await page.Keyboard.UpAsync(Key.Shift);
+        }
 	}
 }

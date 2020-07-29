@@ -9,13 +9,12 @@ using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Mega.WhatsAppAutomator.Infrastructure.TextNow;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp.Contrib.Extensions;
+using PuppeteerSharp.Mobile;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
     public static class AutomationStartup
     {
-        private static bool Headless => true;
-        
         public static bool SmsReady { get; set; }
 
         public static async Task StartSms()
@@ -27,7 +26,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
             
             Console.WriteLine($"Trying to launch");
-            var launchOptions = PupeteerMetadata.GetLaunchOptions(Headless);
+            var launchOptions = PupeteerMetadata.GetLaunchOptions();
 
             var browser = await Puppeteer.LaunchAsync(launchOptions);
             var page = await browser.NewPageAsync();
@@ -51,7 +50,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
             
             Console.WriteLine($"Trying to launch");
-            var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions(Headless));
+            var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions());
             var page = await browser.NewPageAsync();
             Console.WriteLine($"Launched, now going to page");
             await NavigateToWhatsAppWebPage(page);
@@ -106,7 +105,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             try
             {
-                _ = await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = Convert.ToInt32(TimeSpan.FromSeconds(3).TotalMilliseconds) });
+                _ = await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
                 return false;
             }
             catch (Exception e)
@@ -119,14 +118,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             await page.SetViewportAsync(new ViewPortOptions
             {
+                IsMobile = false,
+                HasTouch = false,
                 Width = 1280,
-                Height = 720,
-                DeviceScaleFactor = 1,
-                IsLandscape = true,
-                IsMobile = true
+                Height = 720
             });
             
             await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
+            Thread.Sleep(TimeSpan.FromSeconds(2));
             await page.GoToAsync(WhatsAppWebMetadata.WhatsAppURL);
         }
         

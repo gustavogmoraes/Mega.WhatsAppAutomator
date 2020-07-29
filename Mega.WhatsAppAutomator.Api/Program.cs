@@ -21,8 +21,8 @@ namespace Mega.WhatsAppAutomator.Api
             var apiHost = CreateHostBuilder(args).Build();
             
             // Creates automation
-            //AutomationStartup.StartSms();
             AutomationStartup.Start();
+            
             apiHost.Run();
         }
 

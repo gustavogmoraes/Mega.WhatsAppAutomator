@@ -17,14 +17,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         {
             "--no-sandbox",
             "--proxy-server='direct://'",
-            "--proxy-bypass-list=*",
-            "--disable-infobars",
-            "--disable-notifications",
-            "--window-position=0,0",
-            "--ignore-certifcate-errors",
-            "--ignore-certifcate-errors-spki-list",
-            "--use-fake-ui-for-media-stream"
+            "--proxy-bypass-list=*"
         };
+        
+            // "--disable-infobars",
+            // "--disable-notifications",
+            // "--window-position=0,0",
+            // "--ignore-certifcate-errors",
+            // "--ignore-certifcate-errors-spki-list",
+            // "--use-fake-ui-for-media-stream"
         private static string UserDataDir
         {
             get
@@ -44,27 +45,17 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         private static string PupeteerBasePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PupeteerFiles");
         private static string ExecutablePath => SolveExecutablePath();
         public static bool AmIRunningInDocker => Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
+        public static bool Headless => AmIRunningInDocker || Environment.GetEnvironmentVariable("USE_HEADLESS_CHROMIUM") == "true";
 
-        public static LaunchOptions GetLaunchOptions(bool headless)
+        public static LaunchOptions GetLaunchOptions()
         {
-            var options = new LaunchOptions
+            return new LaunchOptions
             {
-                Headless = headless,
-                UserDataDir = UserDataDir,
-                ExecutablePath = ExecutablePath
+                Headless = Headless,
+                ExecutablePath = ExecutablePath,
+                Args = Headless ? CustomsArgsForHeadless : new string[] { },
+                UserDataDir = UserDataDir
             };
-            
-            options.Args = CustomsArgsForHeadless;
-
-            if (!AmIRunningInDocker)
-            {
-                return options;
-            }
-            
-            // These arguments are mandatory if running on container.
-            options.Headless = true;
-            
-            return options;
         }
 
         private static string SolveExecutablePath()

@@ -16,5 +16,7 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
         /// </summary>
         /// <value>The token.</value>
         public string Token { get; set; }
+
+        public SendMessageConfiguration SendMessageConfiguration { get; set; }
     }
 }

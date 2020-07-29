@@ -6,18 +6,20 @@ using Mega.WhatsAppAutomator.Domain.Objects;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
+using PuppeteerSharp.Input;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
     public static class WhatsAppWebTasks
     {
+        private static HumanizerConfiguration Humanizer { get; set; }
         public static async Task SendMessage(Page page, Message message)
         {
             // Opens the chat
             var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(message.Number);
             await page.EvaluateExpressionAsync(openChatExpression);
             //
-
+            
             await SendHumanizedMessage(page, message.Text);
 
             // await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, " " + message.Text);
@@ -27,6 +29,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task SendHumanizedMessage(Page page, string messageText)
         {
+            Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
             var clientName = "Laboratório HLAGyn";
             
@@ -36,42 +39,35 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 5)));
             //
             
+            //await page.PressShiftEnter();
             // The message
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, new Random().Next(10, 50));
+            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 1);
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 5)));
+            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 3)));
             //
             
             // Farewell
+            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
             await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell(clientName));
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
             //
         }
 
-        private static readonly string[] Greetings = { "Oi", " Olá", "Saudações" };
-
-        private static readonly string[] Cumpliments = { string.Empty, "tudo bem?", "espero que esteja bem", "como vai?", "tudo joia?" };
-        
-        private static readonly string[] ClientPresentations = 
-            { string.Empty, "Falo do {clientName}", "Aqui é do {clientName}", "Represento o {clientName}" };
-        
-        private static readonly string[] Farewells = 
-            {  "Agradeço pela atenção", "Obrigado", "Estamos a seu dispor" };
-
         private static string GetClientPresentation(string clientName)
         {
-            return ClientPresentations.Random().Replace("{clientName}", clientName);
+            return Humanizer.ClientPresentationsPool.Random().Replace("{clientName}", clientName);
         }
         
         private static string GetHumanizedGreeting(string clientName)
         {
-            return $"  {Greetings.Random()} {Cumpliments.Random()}\r\n" +
+            return $"  {Humanizer.GreetingsPool.Random()} {Humanizer.CumplimentsPool.Random()}\r\n" +
                    $"{GetClientPresentation(clientName)}";
         }
         
         private static string GetHumanizedFarewell(string clientName)
         {
-            return Farewells.Random();
+            return Humanizer.FarewellsPool.Random();
         }
     }
 }
