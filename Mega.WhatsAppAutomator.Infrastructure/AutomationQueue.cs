@@ -73,7 +73,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 //    }
                 //};
 
-                Thread.Sleep(TimeSpan.FromMinutes(1.5));
+                Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(2, 28)));
             }
         }
 
