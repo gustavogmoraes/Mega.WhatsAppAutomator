@@ -85,20 +85,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 Thread.Sleep(TimeSpan.FromSeconds(2));
             }
 
-            await TickSentMessages(toBeSentMessages);
+            TickSentMessages(toBeSentMessages);
         }    
 
-        private static async Task TickSentMessages(List<ToBeSent> sentMessages)
+        private static void TickSentMessages(List<ToBeSent> sentMessages)
         {
             using(var session = Stores.MegaWhatsAppApi.OpenSession())
             {
-                sentMessages.ForEach(x => session.Delete(x.Id)); 
-                session.Advanced.DocumentStore.MassInsert(sentMessages.Select(x => new Sent
+                sentMessages.ForEach(x => session.Delete(x.Id));
+                sentMessages.Select(x => new Sent
                 {
                     Message = x.Message,
-                    TimeSent = DateTime.UtcNow.ToBraziliaDateTime() 
-                }).ToList(), processLoopOnDatabase: true);
-                
+                    TimeSent = DateTime.UtcNow
+                }).ToList().ForEach(x => session.Store(x));
                 session.SaveChanges();
             }
         }

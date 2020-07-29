@@ -27,6 +27,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task SendHumanizedMessage(Page page, string messageText)
         {
+            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
             var clientName = "Laboratório HLAGyn";
             
             // Greetings
@@ -36,7 +37,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             //
             
             // The message
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText);
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, new Random().Next(10, 50));
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
             Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 5)));
             //
@@ -47,7 +48,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             //
         }
 
-        private static readonly string[] Greetings = { "Oi", "Olá", "Saudações" };
+        private static readonly string[] Greetings = { "Oi", " Olá", "Saudações" };
 
         private static readonly string[] Cumpliments = { string.Empty, "tudo bem?", "espero que esteja bem", "como vai?", "tudo joia?" };
         
@@ -59,12 +60,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static string GetClientPresentation(string clientName)
         {
-            return ClientPresentations.Random().Replace("clientName", clientName);
+            return ClientPresentations.Random().Replace("{clientName}", clientName);
         }
         
         private static string GetHumanizedGreeting(string clientName)
         {
-            return $" {Greetings.Random()} {Cumpliments.Random()}/r/n" +
+            return $"  {Greetings.Random()} {Cumpliments.Random()}\r\n" +
                    $"{GetClientPresentation(clientName)}";
         }
         

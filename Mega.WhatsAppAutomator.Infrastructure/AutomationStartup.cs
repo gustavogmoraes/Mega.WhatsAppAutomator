@@ -14,7 +14,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 {
     public static class AutomationStartup
     {
-        private static bool Headless => false;
+        private static bool Headless => true;
         
         public static bool SmsReady { get; set; }
 

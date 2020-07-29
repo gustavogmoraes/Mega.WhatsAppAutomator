@@ -51,13 +51,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             }
         }
 
-        public static async Task TypeOnElementAsync(this Page page, string elementSelector, string text) =>
-            await (await page.QuerySelectorAsync(elementSelector)).TypeAsync(text, new TypeOptions { Delay = GetRandomDelay()});
+        public static async Task TypeOnElementAsync(this Page page, string elementSelector, string text, int? delayInMs = null)
+        {
+            await (await page.QuerySelectorAsync(elementSelector)).TypeAsync(text, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
+        }
 
-        // Ths is in ms
+        // This is in ms
         private static int GetRandomDelay()
         {
-            return new Random().Next(200, 400);
+            return new Random().Next(50, 200);
         }
 
 		public static async Task ClickOnElementAsync(this Page page, string elementSelector)
