@@ -62,7 +62,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     await SendListOfMessages(Page, toBeSentMessages);
                 }
 
-                Thread.Sleep(TimeSpan.FromSeconds(ClientConfiguration.MaximumDelayBetweenCycles));
+                Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(ClientConfiguration.MaximumDelayBetweenCycles)));
             }
         }
 
@@ -71,7 +71,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             foreach (var message in toBeSentMessages)
             {
                 await SendMessage(page, message.Message);
-                Thread.Sleep(TimeSpan.FromSeconds(2));
+                Thread.Sleep(TimeSpan.FromSeconds(1));
             }
 
             TickSentMessages(toBeSentMessages);
