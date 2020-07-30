@@ -19,6 +19,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(message.Number);
             await page.EvaluateExpressionAsync(openChatExpression);
             //
+            var teste = await page.QuerySelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+            if (teste != null){
+                await page.ClickOnElementAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+                return;
+            }   
             
             await SendHumanizedMessage(page, message.Text);
         }
