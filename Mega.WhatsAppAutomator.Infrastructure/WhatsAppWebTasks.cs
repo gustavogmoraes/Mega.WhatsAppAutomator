@@ -19,11 +19,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 message.Number = "+5512991828152";
             }
-            // Opens the chat
             var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(message.Number);
             await page.EvaluateExpressionAsync(openChatExpression);
-            //
 
+            var teste = await page.QuerySelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+            if (teste != null){
+                await page.ClickOnElementAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+                return;
+            }   
+            
             await SendHumanizedMessage(page, message.Text);
         }
 

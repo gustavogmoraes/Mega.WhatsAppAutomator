@@ -13,6 +13,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 		public static string SelectorMainDiv = "#app > div > div > div.landing-window > div.landing-main";
         public static string Unread = "._31gEB";
         public static string SelectorChatInput = "#main > footer > div._3ee1T._1LkpH.copyable-area > div._3uMse > div > div._3FRCZ.copyable-text.selectable-text";
+        public static string AcceptInvalidNumber = "#app > div > span:nth-child(2) > div > span > div > div > div > div > div > div._2LPYs > div";
 
         public static string SendMessageExpression(string number) =>
             "var link = document.createElement('a');\n" +

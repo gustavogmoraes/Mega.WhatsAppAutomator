@@ -94,6 +94,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 			{
 				Console.WriteLine(text);
 			});
+<<<<<<< Updated upstream
+=======
+
+            //document.querySelector("#main > div._3h-WS > div > div > div.z_tTQ > div:nth-child(NUMBER) > div > div > div > div.copyable-text > div > span._3Whw5.selectable-text.invisible-space.copyable-text > span")
+
+            
+>>>>>>> Stashed changes
         }
 
         private static void StartQueue(Page page)
