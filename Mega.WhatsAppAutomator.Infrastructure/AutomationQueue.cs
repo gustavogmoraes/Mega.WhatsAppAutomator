@@ -12,6 +12,8 @@ using Mega.WhatsAppAutomator.Infrastructure.Enums;
 using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.TextNow;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
+using Raven.Client.Documents;
+using System.Diagnostics;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -42,7 +44,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     .Where(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1")
                     .Select(x => x.SendMessageConfiguration)
                     .FirstOrDefault();
-                
+
+                //return session.Query<ToBeSent>()
+                //    .Search(x => x.Message.Text, "*prefeitura")
+                //    .OrderBy(x => x.EntryTime)
+                //    .Take(ClientConfiguration.MessagesPerCycle)
+                //    .ToList();
+
+
                 return session.Query<ToBeSent>()
                     .OrderBy(x => x.EntryTime)
                     .Take(ClientConfiguration.MessagesPerCycle)
@@ -56,7 +65,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             while (true)
             {
+                var stp = new Stopwatch();
                 var toBeSentMessages = GetMessagesToBeSent();
+                stp.Stop();
                 if (toBeSentMessages.Any())
                 {
                     await SendListOfMessages(Page, toBeSentMessages);
@@ -71,7 +82,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             foreach (var message in toBeSentMessages)
             {
                 await SendMessage(page, message.Message);
-                Thread.Sleep(TimeSpan.FromSeconds(1));
+                //Thread.Sleep(TimeSpan.FromSeconds(1));
             }
 
             TickSentMessages(toBeSentMessages);
