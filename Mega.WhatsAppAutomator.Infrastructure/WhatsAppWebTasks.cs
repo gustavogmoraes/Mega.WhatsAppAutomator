@@ -1,8 +1,11 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Domain.Objects;
+using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
@@ -23,39 +26,57 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await page.EvaluateExpressionAsync(openChatExpression);
 
             var teste = await page.QuerySelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
-            if (teste != null){
+            if (teste != null)
+            {
                 await page.ClickOnElementAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
                 return;
-            }   
-            
-            await SendHumanizedMessage(page, message.Text);
+            }
+            //if (await CheckIfNumberExists(page)){
+            //    await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+            //    await StoreNotDeliveredMessage(message);
+            //    return;
+            //}   
+
+            await SendHumanizedMessage(page, message.Text, message.Number);
         }
 
-        private static async Task SendHumanizedMessage(Page page, string messageText)
+        private static async Task SendHumanizedMessage(Page page, string messageText, string number)
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
-            Thread.Sleep(TimeSpan.FromSeconds(1));
             var clientName = "Laboratório HLAGyn";
-            
-            // Greetings
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedGreeting(clientName));
-            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 3)));
-            //
+            var random = new Random();
+
+            if (!GetCollaboratorNumbers().Contains(number))
+            {
+                // Greetings
+                await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedGreeting(clientName));
+                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+                Thread.Sleep(TimeSpan.FromSeconds(random.Next(1, 3)));
+                //
+            }
             
             // The message
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
             await page.PasteOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText);
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 3)));
+            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.InsaneMode)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(random.Next(1, 3)));
+            }
             //
-            
-            // Farewell
-            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell(clientName));
-            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            //
+
+            if (!GetCollaboratorNumbers().Contains(number))
+            {
+                // Farewell
+                await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
+                await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell(clientName));
+                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+                //
+            }
         }
+
+
+
 
         private static string GetClientPresentation(string clientName)
         {
@@ -72,5 +93,37 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             return Humanizer.FarewellsPool.Random();
         }
+
+
+        private static IList<string> GetCollaboratorNumbers()
+        {
+            return  Humanizer.CollaboratorsContacts;
+        }
+
+        //private static async Task<bool> CheckIfNumberExists(Page page)
+        //{
+        //    try
+        //    {
+        //        _ = await page.WaitForSelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber, new WaitForSelectorOptions { Timeout = Convert.ToInt32(TimeSpan.FromSeconds(2).TotalMilliseconds) });
+
+        //        return true;
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        return false;
+        //    }
+        //}
+
+        private static async Task StoreNotDeliveredMessage(Message erroMessage)
+        {
+            using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
+            await session.StoreAsync(new NotDelivered
+            {
+                Message = erroMessage,
+                ExecutionTime = DateTime.UtcNow.ToBraziliaDateTime()
+            });
+            await session.SaveChangesAsync();
+        }
+
     }
 }

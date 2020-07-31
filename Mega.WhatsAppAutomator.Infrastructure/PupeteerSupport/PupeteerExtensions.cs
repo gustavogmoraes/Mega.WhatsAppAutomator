@@ -55,11 +55,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 
         public static async Task PasteOnElementAsync(this Page page, string elementSelector, string text)
         {
+            var temp = await ClipboardService.GetTextAsync();
             var pieces = text.Split(new string[] { "\r\n", "\n\r" }, StringSplitOptions.RemoveEmptyEntries).ToList();
             var mensage = String.Join('\n', pieces);
             await ClipboardService.SetTextAsync(mensage);
             await page.FocusAsync(elementSelector);
             await page.PressControlPaste();
+            await ClipboardService.SetTextAsync(temp);
         }
 
 
