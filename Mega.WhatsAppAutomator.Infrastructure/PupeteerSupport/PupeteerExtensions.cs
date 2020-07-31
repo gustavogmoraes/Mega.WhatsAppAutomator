@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
 using PuppeteerSharp.Input;
 using PuppeteerSharp.Media;
+using TextCopy;
 
 namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 {
@@ -52,6 +53,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             }
         }
 
+        public static async Task PasteOnElementAsync(this Page page, string elementSelector, string text)
+        {
+            var pieces = text.Split(new string[] { "\r\n", "\n\r" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            var mensage = String.Join('\n', pieces);
+            await ClipboardService.SetTextAsync(mensage);
+            await page.FocusAsync(elementSelector);
+            await page.PressControlPaste();
+        }
+
+
         public static async Task TypeOnElementAsync(this Page page, string elementSelector, string text, int? delayInMs = null, bool useParser = false)
         {
             if (!useParser)
@@ -64,20 +75,20 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 return;
             }
 
-            var pieces = text.Split(new string[]{"\r\n", "\n\r"}, StringSplitOptions.RemoveEmptyEntries).ToList();
-            foreach (var piece in pieces)
-            {
-                await page.WaitForSelectorAsync(elementSelector);
-                
-                var element = await page.QuerySelectorAsync(elementSelector);
-                await element.TypeAsync(piece, new TypeOptions { Delay = delayInMs });
+			var pieces = text.Split(new string[] { "\r\n", "\n\r" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+			foreach (var piece in pieces)
+			{
+				await page.WaitForSelectorAsync(elementSelector);
 
-                await page.PressShiftEnterAsync();
-            }
-        }
+				var element = await page.QuerySelectorAsync(elementSelector);
+				await element.TypeAsync(piece, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
 
-        // This is in ms
-        private static int GetRandomDelay()
+				await page.PressShiftEnterAsync();
+			}
+		}
+
+		// This is in ms
+		private static int GetRandomDelay()
         {
             return new Random().Next(50, 150);
         }
@@ -99,5 +110,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             await page.Keyboard.PressAsync(Key.Enter);
             await page.Keyboard.UpAsync(Key.Shift);
         }
-	}
+        public static async Task PressControlPaste(this Page page)
+        {
+            await page.Keyboard.DownAsync(Key.Control);
+            await page.Keyboard.PressAsync("V");
+            await page.Keyboard.UpAsync(Key.Control);
+        }
+    }
 }

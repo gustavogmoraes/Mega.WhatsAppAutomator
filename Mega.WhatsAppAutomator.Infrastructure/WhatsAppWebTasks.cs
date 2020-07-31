@@ -36,25 +36,25 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             Thread.Sleep(TimeSpan.FromSeconds(1));
             var clientName = "Laboratório HLAGyn";
-
-            //Greetings
+            
+            // Greetings
             await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedGreeting(clientName));
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 15)));
-
-
+            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 5)));
+            //
+            
             // The message
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, new Random().Next(5), useParser: true);
+            await page.PasteOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText);
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
             Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 3)));
             //
-
-            //Farewell
+            
+            // Farewell
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
             await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell(clientName));
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-
+            //
         }
 
         private static string GetClientPresentation(string clientName)
