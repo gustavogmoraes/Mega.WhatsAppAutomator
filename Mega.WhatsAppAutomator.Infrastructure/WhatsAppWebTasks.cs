@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
 using PuppeteerSharp.Input;
+using Raven.Client.ServerWide.Operations;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -57,7 +59,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             // The message
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 0, true);
+            if (DevOps.DevOpsHelper.GetOsPlatform() == OSPlatform.OSX)
+            {
+                await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 0, true);
+            }
+            else
+            {
+                await page.PasteOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText);
+            }
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
             if (!GetCollaboratorNumbers().Contains(number))
             {
