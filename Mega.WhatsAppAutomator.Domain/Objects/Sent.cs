@@ -8,6 +8,10 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
         
         public Message Message { get; set; }
         
+        public DateTime EntryTime { get; set; }
+        
         public DateTime TimeSent { get; set; }
+        
+        public TimeSpan DelayToBeSent { get; set; }
     }
 }

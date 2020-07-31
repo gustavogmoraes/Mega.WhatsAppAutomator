@@ -62,13 +62,29 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         }
 
         /// <summary>
-        /// Converts datetime from Utc to Brazilia time aka E. South America.
+        /// Converts datetime from Utc to Brazilia time
         /// </summary>
         /// <param name="dateTime"></param>
         /// <returns>The converted datetime.</returns>
-        public static DateTime ToBraziliaDateTime(this DateTime dateTime) 
-        { 
-            return TimeZoneInfo.ConvertTimeFromUtc(dateTime, TimeZoneInfo.FindSystemTimeZoneById("Brazil/East"));
+        public static DateTime ToBraziliaDateTime(this DateTime dateTime)
+        {
+            var timeZone = GetBraziliaTimeZone();
+            return TimeZoneInfo.ConvertTimeFromUtc(dateTime, timeZone);
+        }
+
+        private static TimeZoneInfo GetBraziliaTimeZone()
+        {
+            TimeZoneInfo braziliaTimeZone = null;
+            try
+            {
+                braziliaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Brazil/East");
+            }
+            catch (Exception)
+            {
+                braziliaTimeZone = TimeZoneInfo.CreateCustomTimeZone("Brazilia", TimeSpan.FromHours(-3), "BraziliaTimeZone", "BraziliaTimeZoneStd");
+            }
+
+            return braziliaTimeZone;
         }
 
         public static T[] ArrayAdd<T>(this T[] array, T item)

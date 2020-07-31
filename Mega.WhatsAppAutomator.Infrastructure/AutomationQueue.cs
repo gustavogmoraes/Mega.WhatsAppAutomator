@@ -19,6 +19,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 {
     public static class AutomationQueue
     {
+        private static Stopwatch Stopwatch { get; set; }
         private static Page Page { get; set; }
         private static ConcurrentQueue<WhatsAppWebTask> TaskQueue { get; set; }
 
@@ -32,31 +33,34 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Page = page;
 
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
+            
+            Stopwatch = new Stopwatch();
 
             Task.Run(async () => await QueueExecution());
         }
 
         private static List<ToBeSent> GetMessagesToBeSent()
         {
-            using (var session = Stores.MegaWhatsAppApi.OpenSession())
-            {
-                ClientConfiguration = session.Query<Client>()
-                    .Where(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1")
-                    .Select(x => x.SendMessageConfiguration)
-                    .FirstOrDefault();
+            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            GetClientConfig();
 
-                //return session.Query<ToBeSent>()
-                //    .Search(x => x.Message.Text, "*prefeitura")
-                //    .OrderBy(x => x.EntryTime)
-                //    .Take(ClientConfiguration.MessagesPerCycle)
-                //    .ToList();
+            //return session.Query<ToBeSent>()
+            //    .Search(x => x.Message.Text, "*prefeitura")
+            //    .OrderBy(x => x.EntryTime)
+            //    .Take(ClientConfiguration.MessagesPerCycle)
+            //    .ToList();
 
 
-                return session.Query<ToBeSent>()
-                    .OrderBy(x => x.EntryTime)
-                    .Take(ClientConfiguration.MessagesPerCycle)
-                    .ToList();
-            }
+            var messages = session.Query<ToBeSent>()
+                .Where(x => !x.CurrentlyProcessingOnAnotherInstance)
+                .OrderBy(x => x.EntryTime)
+                .Take(ClientConfiguration.MessagesPerCycle)
+                .ToList();
+            
+            messages.ForEach(x => x.CurrentlyProcessingOnAnotherInstance = true);
+            session.SaveChanges();
+
+            return messages;
         }
 
         private static void GetClientConfig()
@@ -75,16 +79,18 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             while (true)
             {
                 // After x cycles, clean messages
-                var stp = new Stopwatch();
-                stp.Start();
+                Stopwatch.Reset();
+                Stopwatch.Start();
                 var toBeSentMessages = GetMessagesToBeSent();
-                stp.Stop();
+                Stopwatch.Stop();
+                Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} got {toBeSentMessages.Count} to be sent, request time: {Stopwatch.Elapsed}");
+                
                 if (toBeSentMessages.Any())
                 {
                     await SendListOfMessages(Page, toBeSentMessages);
                 }
 
-                Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(ClientConfiguration.MaximumDelayBetweenCycles)));
+                Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenCycles)));
             }
         }
 
@@ -93,7 +99,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             foreach (var message in toBeSentMessages)
             {
                 await SendMessage(page, message.Message);
-                Thread.Sleep(TimeSpan.FromSeconds(1));
+                Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages)));
             }
 
             TickSentMessages(toBeSentMessages);
@@ -101,17 +107,28 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static void TickSentMessages(List<ToBeSent> sentMessages)
         {
-            using(var session = Stores.MegaWhatsAppApi.OpenSession())
+            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            foreach (var x in sentMessages)
             {
-                sentMessages.ForEach(x => session.Delete(x.Id));
-                sentMessages.Select(x => new Sent
-                {
-                    Message = x.Message,
-                    TimeSent = DateTime.UtcNow
-                }).ToList().ForEach(x => session.Store(x));
-                session.SaveChanges();
+                session.Delete(x.Id);
             }
+
+            var listOfSents = sentMessages.Select(SentMessageSelector).ToList();
+            foreach (var x in listOfSents)
+            {
+                x.DelayToBeSent = x.TimeSent.Subtract(x.EntryTime); 
+                session.Store(x);
+            }
+            
+            session.SaveChanges();
         }
+
+        private static Func<ToBeSent, Sent> SentMessageSelector =>x => new Sent
+        {
+            Message = x.Message,
+            EntryTime = x.EntryTime, // It's already on Brazilia DateTime
+            TimeSent = DateTime.UtcNow.ToBraziliaDateTime(),
+       };
 
         private static async Task SendMessage(Page page, Message message)
         {
