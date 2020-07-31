@@ -36,36 +36,37 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Task.Run(async () => await QueueExecution());
         }
 
-        private static List<ToBeSent> GetMessagesToBeSent()
+        private static async Task<List<ToBeSent>> GetReturnListAsync()
         {
-            List<ToBeSent> returnList = null;
-            GetClientConfig();
-            using (var session = Stores.MegaWhatsAppApi.OpenSession())
+            using (var session = Stores.MegaWhatsAppApi.OpenAsyncSession())
             {
-                returnList = session.Query<ToBeSent>()
+                return await session.Query<ToBeSent>()
                 .Where(x => x.CurrentlyProcessingOnAnotherInstance != true)
                 .OrderBy(x => x.EntryTime)
                 .Take(ClientConfiguration.MessagesPerCycle) // Note, if we use take and save changes on the same session, we remove the objects from the collection
-                .ToList();
+                .ToListAsync();
+            }
+        }
+
+        private static async Task<List<ToBeSent>> GetMessagesToBeSentAsync()
+        {
+            GetClientConfig();
+            var returnList = await GetReturnListAsync();
+
+            foreach (var x in returnList)
+            {
+                using var session2 = Stores.MegaWhatsAppApi.OpenAsyncSession();
+                var tbS = await session2.LoadAsync<ToBeSent>(x.Id);
+                tbS.CurrentlyProcessingOnAnotherInstance = true;
+                await session2.SaveChangesAsync();
             }
 
+            return returnList;
             //return session.Query<ToBeSent>()
             //    .Search(x => x.Message.Text, "*prefeitura")
             //    .OrderBy(x => x.EntryTime)
             //    .Take(ClientConfiguration.MessagesPerCycle)
             //    .ToList();
-
-            using (var session2 = Stores.MegaWhatsAppApi.OpenSession())
-            {
-                returnList.ForEach(x =>
-                {
-                    var tbS = session2.Load<ToBeSent>(x.Id);
-                    tbS.CurrentlyProcessingOnAnotherInstance = true;
-                });
-                session2.SaveChanges();
-            }
-
-            return returnList;
         }
 
         private static void GetClientConfig()
@@ -86,7 +87,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 // After x cycles, clean messages
                 var stp = new Stopwatch();
                 stp.Start();
-                var toBeSentMessages = GetMessagesToBeSent();
+                var toBeSentMessages = await GetMessagesToBeSentAsync();
                 stp.Stop();
                 
                 Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} got {toBeSentMessages.Count} to be sent, request time: {stp.Elapsed.TimeSpanToReport()}");
