@@ -24,22 +24,25 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 message.Number = "+5512991828152";
             }
-            var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(message.Number);
+            var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(message.Number);            
             await page.EvaluateExpressionAsync(openChatExpression);
+            Thread.Sleep(TimeSpan.FromSeconds(0.5));
 
-            var teste = await page.QuerySelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
-            if (teste != null)
-            {
-                await page.ClickOnElementAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
-                return;
-            }
-            //if (await CheckIfNumberExists(page)){
-            //    await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
-            //    await StoreNotDeliveredMessage(message);
+            //var teste = await page.QuerySelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+            //if (teste != null)
+            //{
+            //    await page.ClickOnElementAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
             //    return;
-            //}   
+            //}
+            if (await CheckIfNumberExists(page))
+			{
+                //Thread.Sleep(TimeSpan.FromSeconds(0.5));
+				await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+				await StoreNotDeliveredMessage(message);
+				return;
+			}
 
-            await SendHumanizedMessage(page, message.Text, message.Number);
+			await SendHumanizedMessage(page, message.Text, message.Number);
         }
 
         private static async Task SendHumanizedMessage(Page page, string messageText, string number)
@@ -109,21 +112,21 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return  Humanizer.CollaboratorsContacts;
         }
 
-        //private static async Task<bool> CheckIfNumberExists(Page page)
-        //{
-        //    try
-        //    {
-        //        _ = await page.WaitForSelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber, new WaitForSelectorOptions { Timeout = Convert.ToInt32(TimeSpan.FromSeconds(2).TotalMilliseconds) });
+		private static async Task<bool> CheckIfNumberExists(Page page)
+		{
+			try
+			{
+				await page.WaitForSelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber, new WaitForSelectorOptions { Visible = true, Timeout = Convert.ToInt32(TimeSpan.FromSeconds(2).TotalMilliseconds) });
 
-        //        return true;
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        return false;
-        //    }
-        //}
+				return true;
+			}
+			catch (Exception e)
+			{
+				return false;
+			}
+		}
 
-        private static async Task StoreNotDeliveredMessage(Message erroMessage)
+		private static async Task StoreNotDeliveredMessage(Message erroMessage)
         {
             using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
             await session.StoreAsync(new NotDelivered
