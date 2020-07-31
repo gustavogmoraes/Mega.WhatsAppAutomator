@@ -1,6 +1,7 @@
 using System;
 using Mega.WhatsAppAutomator.Api.ApiUtils;
 using Mega.WhatsAppAutomator.Api.Filters;
+using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -24,7 +25,6 @@ namespace Mega.WhatsAppAutomator.Api
             services.AddSession();
             services.AddControllersWithViews (options =>
             {
-                //options.RequireHttpsPermanent = false;
                 options.Filters.Add (typeof (SessionFilter));
                 options.Filters.Add (typeof (ExceptionHandlerFilter));
             });
@@ -33,12 +33,12 @@ namespace Mega.WhatsAppAutomator.Api
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
+            if (!EnvironmentConfiguration.IsRunningOnHeroku)
             {
                 app.UseDeveloperExceptionPage();
             }
-            
-            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production_Heroku")
+
+            if (EnvironmentConfiguration.IsRunningOnHeroku)
             {
                 app.UseHttpsRedirection();
             }

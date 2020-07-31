@@ -11,17 +11,17 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Persistence
 {
     public static class Stores
     {
-        private const string UrlCloud = @"https://a.free.gsoftware.ravendb.cloud/";
         private const string CertificateFileName = "free.gsoftware.client.certificate.with.password.pfx";
         private const string CertificatePassword = "8FF4A485E3D110558EF44DAA5347761E";
-        private static string MainDatabase = Utils.Extensions.EnvironmentIsDevelopment() ? "Mega.WhatsAppApi.Dev" : "Mega.WhatsAppApi";
-        //private static string MainDatabase = "Mega.WhatsAppApi";
+
+        private static string UrlCloud = EnvironmentConfiguration.DatabaseUrl;
+        private static string MainDatabase = EnvironmentConfiguration.DatabaseName;
+
         private static string ClientDatabase => GetClientDatabaseName();
 
         private static string GetClientDatabaseName()
         {
             return string.Empty;
-            //Session
         }
 
         public static List<Client> Clients { get; set; }
@@ -65,34 +65,21 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Persistence
 
         private static IDocumentStore CreateNewDocumentStore(string databaseName)
         {
-            var localport = Environment.GetEnvironmentVariable("RAVENDB_LOCAL_PORT");
-            if (localport != null)
-            {
-                var localStore = new DocumentStore
-                {
-                    Urls = new[] { $"http://localhost:{localport}" },
-                    Database = databaseName,
-                };
-
-                localStore.Initialize();
-
-                DocumentStores.Add(databaseName, localStore);
-                return localStore;
-            }
-
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             var certificatePath = Path.Combine(baseDirectory, CertificateFileName);
 
             var documentStore = new DocumentStore
             {
                 Urls = new[] { UrlCloud },
-                Database = databaseName,
-                Certificate = new X509Certificate2(certificatePath, CertificatePassword)
+                Database = databaseName
             };
+
+            documentStore.Certificate = new X509Certificate2(certificatePath, CertificatePassword);
 
             documentStore.Initialize();
 
             DocumentStores.Add(databaseName, documentStore);
+
             return documentStore;
 
         }
