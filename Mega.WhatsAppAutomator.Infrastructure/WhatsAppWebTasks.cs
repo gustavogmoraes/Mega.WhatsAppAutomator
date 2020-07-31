@@ -46,7 +46,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             var clientName = "Laboratório HLAGyn";
             var random = new Random();
 
-            if (!GetCollaboratorNumbers().Contains(number) && !Humanizer.InsaneMode)
+            if (!GetCollaboratorNumbers().Contains(number))
             {
                 // Greetings
                 await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedGreeting(clientName));
@@ -57,15 +57,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             // The message
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.PasteOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText);
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 0, true);
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            if (!GetCollaboratorNumbers().Contains(number) && !Humanizer.InsaneMode)
+            if (!GetCollaboratorNumbers().Contains(number))
             {
                 Thread.Sleep(TimeSpan.FromSeconds(random.Next(1, 3)));
             }
             //
 
-            if (!GetCollaboratorNumbers().Contains(number) && !Humanizer.InsaneMode)
+            if (!GetCollaboratorNumbers().Contains(number))
             {
                 // Farewell
                 await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
