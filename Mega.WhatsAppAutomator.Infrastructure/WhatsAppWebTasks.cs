@@ -40,7 +40,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             // Greetings
             await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedGreeting(clientName));
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 5)));
+            Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, 3)));
             //
             
             // The message

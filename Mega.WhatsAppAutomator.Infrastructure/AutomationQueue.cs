@@ -76,21 +76,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 // After x cycles, clean messages
                 var stp = new Stopwatch();
+                stp.Start();
                 var toBeSentMessages = GetMessagesToBeSent();
                 stp.Stop();
                 if (toBeSentMessages.Any())
                 {
-                    
+                    await SendListOfMessages(Page, toBeSentMessages);
                 }
-                else
-                {
-                    var toBeSentMessages = GetMessagesToBeSent();
-                    if (toBeSentMessages.Any())
-                    {
-                        await SendListOfMessages(Page, toBeSentMessages);
-                    }
-                }
-                
+
                 Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(ClientConfiguration.MaximumDelayBetweenCycles)));
             }
         }
@@ -100,7 +93,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             foreach (var message in toBeSentMessages)
             {
                 await SendMessage(page, message.Message);
-                //Thread.Sleep(TimeSpan.FromSeconds(1));
+                Thread.Sleep(TimeSpan.FromSeconds(1));
             }
 
             TickSentMessages(toBeSentMessages);
@@ -125,51 +118,51 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await WhatsAppWebTasks.SendMessage(page, message);
         }
         
-        private static List<ByNumberMessages> GetListOfByNumberMessages()
-        {
-            List<ByNumberMessages> listOfByNumberMessages;
-            using (var session = Stores.MegaWhatsAppApi.OpenSession())
-            {
-                var byNumberGrouping = session.Query<ToBeSent>()
-                    .Take(1000)
-                    .GroupBy(toBeSent => toBeSent.Message.Number)
-                    .Select(x => new
-                    {
-                        Number = x.Key,
-                        TextCount = x.Count()
-                    })
-                    .ToList();
+        //private static List<ByNumberMessages> GetListOfByNumberMessages()
+        //{
+        //    List<ByNumberMessages> listOfByNumberMessages;
+        //    using (var session = Stores.MegaWhatsAppApi.OpenSession())
+        //    {
+        //        var byNumberGrouping = session.Query<ToBeSent>()
+        //            .Take(1000)
+        //            .GroupBy(toBeSent => toBeSent.Message.Number)
+        //            .Select(x => new
+        //            {
+        //                Number = x.Key,
+        //                TextCount = x.Count()
+        //            })
+        //            .ToList();
 
-                listOfByNumberMessages = new List<ByNumberMessages>();
-                foreach (var group in byNumberGrouping)
-                {
-                    ProcessAndAddOnListOfMesssagesByNumber(session, @group.Number, listOfByNumberMessages);
-                }
-            }
+        //        listOfByNumberMessages = new List<ByNumberMessages>();
+        //        foreach (var group in byNumberGrouping)
+        //        {
+        //            ProcessAndAddOnListOfMesssagesByNumber(session, @group.Number, listOfByNumberMessages);
+        //        }
+        //    }
 
-            return listOfByNumberMessages;
-        }
+        //    return listOfByNumberMessages;
+        //}
 
-        private static void ProcessAndAddOnListOfMesssagesByNumber(IDocumentSession session, string number, List<ByNumberMessages> listOfByNumberMessages)
-        {
-            var listOfToBeSents = QueryToBeSentByThisNumber(number);
+        //private static void ProcessAndAddOnListOfMesssagesByNumber(IDocumentSession session, string number, List<ByNumberMessages> listOfByNumberMessages)
+        //{
+        //    var listOfToBeSents = QueryToBeSentByThisNumber(number);
 
-            var texts = new List<string>();
-            var ids = new List<string>();
+        //    var texts = new List<string>();
+        //    var ids = new List<string>();
 
-            foreach (var toBeSent in listOfToBeSents)
-            {
-                ids.Add(toBeSent.Id);
-                texts.Add(toBeSent.Message.Text);
-            }
+        //    foreach (var toBeSent in listOfToBeSents)
+        //    {
+        //        ids.Add(toBeSent.Id);
+        //        texts.Add(toBeSent.Message.Text);
+        //    }
 
-            listOfByNumberMessages.Add(new ByNumberMessages
-            {
-                Number = number,
-                IdsToDelete = ids.Distinct().ToList(),
-                Texts = texts.Distinct().ToList()
-            });
-        }
+        //    listOfByNumberMessages.Add(new ByNumberMessages
+        //    {
+        //        Number = number,
+        //        IdsToDelete = ids.Distinct().ToList(),
+        //        Texts = texts.Distinct().ToList()
+        //    });
+        //}
 
         private static List<ToBeSent> QueryToBeSentByThisNumber(string number)
         {
