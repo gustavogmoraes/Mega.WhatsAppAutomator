@@ -38,7 +38,7 @@ namespace Mega.WhatsAppAutomator.Api
                 app.UseDeveloperExceptionPage();
             }
             
-            if (env.IsProduction())
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production_Heroku")
             {
                 app.UseHttpsRedirection();
             }

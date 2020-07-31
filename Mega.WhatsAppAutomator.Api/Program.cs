@@ -42,9 +42,13 @@ namespace Mega.WhatsAppAutomator.Api
                         .UseKestrel(opt => opt.Listen(IPAddress.Any, 5000))
                         .UseStartup<Startup>()),
                 
-                "Production" => Host.CreateDefaultBuilder(args)
-                    .ConfigureWebHostDefaults(webBuilder => webBuilder.UsePort().UseStartup<Startup>()),
+                "Production_Local" => Host.CreateDefaultBuilder(args)
+                    .ConfigureWebHostDefaults(webBuilder => webBuilder
+                        .UseKestrel(opt => opt.Listen(IPAddress.Any, 5000))
+                        .UseStartup<Startup>()),
                 
+                "Production_Heroku" => Host.CreateDefaultBuilder(args)
+                    .ConfigureWebHostDefaults(webBuilder => webBuilder.UsePort().UseStartup<Startup>()),
                 _ => null
             };
         }
