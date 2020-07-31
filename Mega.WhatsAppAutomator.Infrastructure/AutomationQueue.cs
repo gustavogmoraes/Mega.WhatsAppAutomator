@@ -19,7 +19,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 {
     public static class AutomationQueue
     {
-        private static Stopwatch Stopwatch { get; set; }
         private static Page Page { get; set; }
         private static ConcurrentQueue<WhatsAppWebTask> TaskQueue { get; set; }
 
@@ -33,8 +32,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Page = page;
 
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
-            
-            Stopwatch = new Stopwatch();
 
             Task.Run(async () => await QueueExecution());
         }
@@ -79,11 +76,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             while (true)
             {
                 // After x cycles, clean messages
-                Stopwatch.Reset();
-                Stopwatch.Start();
+                var stp = new Stopwatch();
+                stp.Start();
                 var toBeSentMessages = GetMessagesToBeSent();
-                Stopwatch.Stop();
-                Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} got {toBeSentMessages.Count} to be sent, request time: {Stopwatch.Elapsed}");
+                stp.Stop();
+                
+                Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} got {toBeSentMessages.Count} to be sent, request time: {stp.Elapsed}");
                 
                 if (toBeSentMessages.Any())
                 {
@@ -96,13 +94,18 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task SendListOfMessages(Page page, List<ToBeSent> toBeSentMessages)
         {
+            var outerStp =  new Stopwatch();
+            outerStp.Start();
             foreach (var message in toBeSentMessages)
             {
                 await SendMessage(page, message.Message);
                 Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages)));
             }
 
+            var count = toBeSentMessages;
             TickSentMessages(toBeSentMessages);
+            outerStp.Stop();
+            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} sent {count} to be sent on: {outerStp.Elapsed}");
         }    
 
         private static void TickSentMessages(List<ToBeSent> sentMessages)
@@ -127,12 +130,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             Message = x.Message,
             EntryTime = x.EntryTime, // It's already on Brazilia DateTime
-            TimeSent = DateTime.UtcNow.ToBraziliaDateTime(),
+            TimeSent = DateTime.UtcNow.ToBraziliaDateTime()
        };
 
         private static async Task SendMessage(Page page, Message message)
         {
+            var stp = new Stopwatch();
+            stp.Start();
             await WhatsAppWebTasks.SendMessage(page, message);
+            stp.Stop();
+            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} sent a messsage of {message.Text.Length} characters in {stp.Elapsed}");
         }
         
         //private static List<ByNumberMessages> GetListOfByNumberMessages()
