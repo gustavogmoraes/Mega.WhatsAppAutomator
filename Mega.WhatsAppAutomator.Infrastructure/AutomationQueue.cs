@@ -38,8 +38,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static List<ToBeSent> GetMessagesToBeSent()
         {
-            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            List<ToBeSent> returnList = null;
             GetClientConfig();
+            using (var session = Stores.MegaWhatsAppApi.OpenSession())
+            {
+                returnList = session.Query<ToBeSent>()
+                .Where(x => x.CurrentlyProcessingOnAnotherInstance != true)
+                .OrderBy(x => x.EntryTime)
+                .Take(ClientConfiguration.MessagesPerCycle) // Note, if we use take and save changes on the same session, we remove the objects from the collection
+                .ToList();
+            }
 
             //return session.Query<ToBeSent>()
             //    .Search(x => x.Message.Text, "*prefeitura")
@@ -47,17 +55,17 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             //    .Take(ClientConfiguration.MessagesPerCycle)
             //    .ToList();
 
+            using (var session2 = Stores.MegaWhatsAppApi.OpenSession())
+            {
+                returnList.ForEach(x =>
+                {
+                    var tbS = session2.Load<ToBeSent>(x.Id);
+                    tbS.CurrentlyProcessingOnAnotherInstance = true;
+                });
+                session2.SaveChanges();
+            }
 
-            var messages = session.Query<ToBeSent>()
-                .Where(x => !x.CurrentlyProcessingOnAnotherInstance)
-                .OrderBy(x => x.EntryTime)
-                .Take(ClientConfiguration.MessagesPerCycle)
-                .ToList();
-            
-            messages.ForEach(x => x.CurrentlyProcessingOnAnotherInstance = true);
-            session.SaveChanges();
-
-            return messages;
+            return returnList;
         }
 
         private static void GetClientConfig()
@@ -81,7 +89,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 var toBeSentMessages = GetMessagesToBeSent();
                 stp.Stop();
                 
-                Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} got {toBeSentMessages.Count} to be sent, request time: {stp.Elapsed}");
+                Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} got {toBeSentMessages.Count} to be sent, request time: {stp.Elapsed.TimeSpanToReport()}");
                 
                 if (toBeSentMessages.Any())
                 {
@@ -102,10 +110,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages)));
             }
 
-            var count = toBeSentMessages;
+            var count = toBeSentMessages.Count;
             TickSentMessages(toBeSentMessages);
             outerStp.Stop();
-            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} sent {count} to be sent on: {outerStp.Elapsed}");
+            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} sent {count} to be sent on: {outerStp.Elapsed.TimeSpanToReport()}");
         }    
 
         private static void TickSentMessages(List<ToBeSent> sentMessages)
@@ -139,7 +147,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             stp.Start();
             await WhatsAppWebTasks.SendMessage(page, message);
             stp.Stop();
-            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} sent a messsage of {message.Text.Length} characters in {stp.Elapsed}");
+            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} sent a messsage of {message.Text.Length} characters in {stp.Elapsed.TimeSpanToReport()}");
         }
         
         //private static List<ByNumberMessages> GetListOfByNumberMessages()

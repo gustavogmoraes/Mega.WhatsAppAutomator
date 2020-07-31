@@ -26,14 +26,6 @@ namespace Mega.WhatsAppAutomator.Api
         public static void Main(string[] args)
         {
             var apiHost = CreateHostBuilder(args).Build();
-            using (var session = Stores.MegaWhatsAppApi.OpenSession())
-            {
-                var results = session.Query<ToBeSent>()
-                    .Search(x => x.Message.Text, "*prefeitura")
-                    .OrderBy(x => x.EntryTime)
-                    .ToList();
-
-            }
             
             // Creates automation
             AutomationStartup.Start();

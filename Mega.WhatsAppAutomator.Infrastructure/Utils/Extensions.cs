@@ -35,7 +35,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         /// <param name="resultString"></param>
         /// <returns></returns>
         public static dynamic GetStringContentResult(this string resultString)
-        { 
+        {
             return (dynamic)JsonConvert.DeserializeObject<ExpandoObject>(resultString, new ExpandoObjectConverter());
         }
 
@@ -100,9 +100,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
             return Enumerable.Range(0, str.Length / chunkSize)
                 .Select(i => str.Substring(i * chunkSize, chunkSize));
         }
-        
+
         public static void MassInsert<T>(this IDocumentStore store, IList<T> list, bool processLoopOnDatabase = false)
-            where T: class, new()
+            where T : class, new()
         {
             if (processLoopOnDatabase)
             {
@@ -122,13 +122,18 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
                 session.SaveChanges();
             }
         }
-        
+
         public static T Random<T>(this IEnumerable<T> input)
         {
             var random = new Random();
             var list = input.ToList();
-            
+
             return list.ElementAt(random.Next(0, list.Count));
+        }
+
+        public static string TimeSpanToReport(this TimeSpan ts)
+        {
+            return new DateTime(ts.Ticks).ToString("mm:ss");
         }
     }
 }

@@ -10,6 +10,6 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
         
         public DateTime EntryTime { get; set; }
         
-        public bool CurrentlyProcessingOnAnotherInstance { get; set; }
+        public bool? CurrentlyProcessingOnAnotherInstance { get; set; }
     }
 }
