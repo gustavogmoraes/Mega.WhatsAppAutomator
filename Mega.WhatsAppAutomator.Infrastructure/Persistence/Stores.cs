@@ -65,9 +65,24 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Persistence
 
         private static IDocumentStore CreateNewDocumentStore(string databaseName)
         {
+            var localport = Environment.GetEnvironmentVariable("RAVENDB_LOCAL_PORT");
+            if (localport != null)
+            {
+                var localStore = new DocumentStore
+                {
+                    Urls = new[] { $"http://localhost:{localport}" },
+                    Database = databaseName,
+                };
+
+                localStore.Initialize();
+
+                DocumentStores.Add(databaseName, localStore);
+                return localStore;
+            }
+
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             var certificatePath = Path.Combine(baseDirectory, CertificateFileName);
-            
+
             var documentStore = new DocumentStore
             {
                 Urls = new[] { UrlCloud },
@@ -79,6 +94,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Persistence
 
             DocumentStores.Add(databaseName, documentStore);
             return documentStore;
+
         }
 
         #endregion

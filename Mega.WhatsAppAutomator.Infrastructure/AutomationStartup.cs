@@ -51,13 +51,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             Console.WriteLine($"Trying to launch");
             var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions());
+                        
             var page = await browser.NewPageAsync();
             Console.WriteLine($"Launched, now going to page");
             await NavigateToWhatsAppWebPage(page);
 
             var amILogged = await CheckItsLoggedIn(page);
             Console.WriteLine(amILogged ? "I am logged" : "I AM NOT LOGGED IN");
-            if(!amILogged)
+            if (!amILogged)
             {
                 await GetQrCode(page);
                 Console.WriteLine("Waiting for QrCode scan");
@@ -67,6 +68,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             StartQueue(page);
             //await StartListeningToMessagesAsync();
             //StartListeningToMessagesAsync(page);
+            
+
+            
         }
 
         private static async Task WaitForSetup(Page page, TimeSpan timeout)
@@ -101,18 +105,20 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             AutomationQueue.StartQueue(page);
         }
 
-        private static async Task<bool> CheckItsLoggedIn(Page page)
-        {
-            try
-            {
-                _ = await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
-                return false;
-            }
-            catch (Exception e)
-            {
-                return true;
-            }
-        }
+		private static async Task<bool> CheckItsLoggedIn(Page page)
+		{
+			try
+			{
+				_ = await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
+				return false;
+			}
+			catch (Exception e)
+			{
+				return true;
+			}
+		}
+
+
 
         private static async Task NavigateToWhatsAppWebPage(Page page)
         {

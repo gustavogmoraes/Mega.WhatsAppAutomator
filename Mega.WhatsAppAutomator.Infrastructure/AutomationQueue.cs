@@ -14,6 +14,7 @@ using Mega.WhatsAppAutomator.Infrastructure.TextNow;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using Raven.Client.Documents;
 using System.Diagnostics;
+using Raven.Client.Documents.Linq;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -30,10 +31,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public static void StartQueue(Page page)
         {
             Page = page;
-
+            
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
 
             Task.Run(async () => await QueueExecution());
+          
         }
 
         private static List<ToBeSent> GetMessagesToBeSent()
@@ -107,7 +109,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             foreach (var message in toBeSentMessages)
             {
                 await SendMessage(page, message.Message);
-                Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages)));
+                if (!ClientConfiguration.HumanizerConfiguration.InsaneMode)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages)));
+                }
             }
 
             var count = toBeSentMessages.Count;
