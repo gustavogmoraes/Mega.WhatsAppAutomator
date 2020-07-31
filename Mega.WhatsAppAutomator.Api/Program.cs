@@ -1,15 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Api.ApiUtils;
+using Mega.WhatsAppAutomator.Domain.Objects;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Mega.WhatsAppAutomator.Infrastructure;
+using Mega.WhatsAppAutomator.Infrastructure.Persistence;
+using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using Microsoft.AspNetCore;
+using Raven.Client.Documents;
+using Raven.Client.Documents.Session;
 using Raven.Client.Extensions;
 
 namespace Mega.WhatsAppAutomator.Api
@@ -19,6 +26,14 @@ namespace Mega.WhatsAppAutomator.Api
         public static void Main(string[] args)
         {
             var apiHost = CreateHostBuilder(args).Build();
+            using (var session = Stores.MegaWhatsAppApi.OpenSession())
+            {
+                var results = session.Query<ToBeSent>()
+                    .Search(x => x.Message.Text, "*prefeitura")
+                    .OrderBy(x => x.EntryTime)
+                    .ToList();
+
+            }
             
             // Creates automation
             AutomationStartup.Start();

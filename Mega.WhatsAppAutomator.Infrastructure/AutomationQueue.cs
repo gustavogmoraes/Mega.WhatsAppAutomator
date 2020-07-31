@@ -59,20 +59,38 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
         }
 
+        private static void GetClientConfig()
+        {
+            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            ClientConfiguration = session.Query<Client>()
+                .Where(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1")
+                .Select(x => x.SendMessageConfiguration)
+                .FirstOrDefault();
+        }
+
         public static SendMessageConfiguration ClientConfiguration { get; set; }
 
         private static async Task QueueExecution()
         {
             while (true)
             {
+                // After x cycles, clean messages
                 var stp = new Stopwatch();
                 var toBeSentMessages = GetMessagesToBeSent();
                 stp.Stop();
                 if (toBeSentMessages.Any())
                 {
-                    await SendListOfMessages(Page, toBeSentMessages);
+                    
                 }
-
+                else
+                {
+                    var toBeSentMessages = GetMessagesToBeSent();
+                    if (toBeSentMessages.Any())
+                    {
+                        await SendListOfMessages(Page, toBeSentMessages);
+                    }
+                }
+                
                 Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(ClientConfiguration.MaximumDelayBetweenCycles)));
             }
         }
@@ -105,6 +123,63 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static async Task SendMessage(Page page, Message message)
         {
             await WhatsAppWebTasks.SendMessage(page, message);
+        }
+        
+        private static List<ByNumberMessages> GetListOfByNumberMessages()
+        {
+            List<ByNumberMessages> listOfByNumberMessages;
+            using (var session = Stores.MegaWhatsAppApi.OpenSession())
+            {
+                var byNumberGrouping = session.Query<ToBeSent>()
+                    .Take(1000)
+                    .GroupBy(toBeSent => toBeSent.Message.Number)
+                    .Select(x => new
+                    {
+                        Number = x.Key,
+                        TextCount = x.Count()
+                    })
+                    .ToList();
+
+                listOfByNumberMessages = new List<ByNumberMessages>();
+                foreach (var group in byNumberGrouping)
+                {
+                    ProcessAndAddOnListOfMesssagesByNumber(session, @group.Number, listOfByNumberMessages);
+                }
+            }
+
+            return listOfByNumberMessages;
+        }
+
+        private static void ProcessAndAddOnListOfMesssagesByNumber(IDocumentSession session, string number, List<ByNumberMessages> listOfByNumberMessages)
+        {
+            var listOfToBeSents = QueryToBeSentByThisNumber(number);
+
+            var texts = new List<string>();
+            var ids = new List<string>();
+
+            foreach (var toBeSent in listOfToBeSents)
+            {
+                ids.Add(toBeSent.Id);
+                texts.Add(toBeSent.Message.Text);
+            }
+
+            listOfByNumberMessages.Add(new ByNumberMessages
+            {
+                Number = number,
+                IdsToDelete = ids.Distinct().ToList(),
+                Texts = texts.Distinct().ToList()
+            });
+        }
+
+        private static List<ToBeSent> QueryToBeSentByThisNumber(string number)
+        {
+            using (var session = Stores.MegaWhatsAppApi.OpenSession())
+            {
+                return session.Query<ToBeSent>()
+                    .Take(1000)
+                    .Where(x => x.Message.Number == number)
+                    .ToList();
+            }
         }
 
         private static List<Message> TreatLongMessage(Message message)

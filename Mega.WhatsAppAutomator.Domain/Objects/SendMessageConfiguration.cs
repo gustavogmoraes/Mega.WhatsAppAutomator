@@ -8,5 +8,6 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
         
         public HumanizerConfiguration HumanizerConfiguration { get; set; }
         
+        public bool UseMessagesByNumber { get; set; }
     }    
 }
