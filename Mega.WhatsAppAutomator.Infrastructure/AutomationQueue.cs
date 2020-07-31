@@ -40,14 +40,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task<List<ToBeSent>> GetReturnListAsync()
         {
-            using (var session = Stores.MegaWhatsAppApi.OpenAsyncSession())
+            using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
+
+            if (ClientConfiguration.PriorityzeFinalClients)
             {
                 return await session.Query<ToBeSent>()
+                    .Search(x => x.Message.Text, "*prefeitura")
+                    .OrderBy(x => x.EntryTime)
+                    .Take(ClientConfiguration.MessagesPerCycle)
+                    .ToListAsync();
+            }
+            
+            return await session.Query<ToBeSent>()
                 .Where(x => x.CurrentlyProcessingOnAnotherInstance != true)
                 .OrderBy(x => x.EntryTime)
                 .Take(ClientConfiguration.MessagesPerCycle) // Note, if we use take and save changes on the same session, we remove the objects from the collection
                 .ToListAsync();
-            }
         }
 
         private static async Task<List<ToBeSent>> GetMessagesToBeSentAsync()
@@ -64,11 +72,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
 
             return returnList;
-            //return session.Query<ToBeSent>()
-            //    .Search(x => x.Message.Text, "*prefeitura")
-            //    .OrderBy(x => x.EntryTime)
-            //    .Take(ClientConfiguration.MessagesPerCycle)
-            //    .ToList();
         }
 
         private static void GetClientConfig()

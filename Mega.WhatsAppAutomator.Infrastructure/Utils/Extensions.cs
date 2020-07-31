@@ -68,23 +68,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         /// <returns>The converted datetime.</returns>
         public static DateTime ToBraziliaDateTime(this DateTime dateTime)
         {
-            var timeZone = GetBraziliaTimeZone();
-            return TimeZoneInfo.ConvertTimeFromUtc(dateTime, timeZone);
+            return TimeZoneInfo.ConvertTimeFromUtc(dateTime, BraziliaTimeZone);
         }
 
-        private static TimeZoneInfo GetBraziliaTimeZone()
-        {
-            TimeZoneInfo braziliaTimeZone = null;
-            try
-            {
-                braziliaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Brazil/East");
-            }
-            catch (Exception)
-            {
-                braziliaTimeZone = TimeZoneInfo.CreateCustomTimeZone("Brazilia", TimeSpan.FromHours(-3), "BraziliaTimeZone", "BraziliaTimeZoneStd");
-            }
+        private static TimeZoneInfo BraziliaTimeZone { get; set; }
 
-            return braziliaTimeZone;
+        static Extensions()
+        {
+            BraziliaTimeZone = TimeZoneInfo.CreateCustomTimeZone("Brazilia", TimeSpan.FromHours(-3), "BraziliaTimeZone", "BraziliaTimeZoneStd");
         }
 
         public static T[] ArrayAdd<T>(this T[] array, T item)
