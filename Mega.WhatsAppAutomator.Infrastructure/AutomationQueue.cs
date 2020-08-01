@@ -96,7 +96,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 stp.Stop();
 
                 var messagesIds = string.Join(", ", toBeSentMessages.Select(x => x.Id));
-                messagesIds = messagesIds.Remove(messagesIds.Length, 1);
 
                 Console.WriteLine(
                     $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +

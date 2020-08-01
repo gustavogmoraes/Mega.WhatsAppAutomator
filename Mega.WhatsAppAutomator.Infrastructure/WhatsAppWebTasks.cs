@@ -62,14 +62,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             // The message
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            if (DevOps.DevOpsHelper.GetOsPlatform() == OSPlatform.OSX)
-            {
-                await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 0, true);
-            }
-            else
-            {
-                await page.PasteOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText);
-            }
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 0, true);
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
             if (!GetCollaboratorNumbers().Contains(number))
             {
