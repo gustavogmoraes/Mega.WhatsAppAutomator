@@ -36,7 +36,7 @@ namespace Mega.WhatsAppAutomator.Api
                         return;
                     }
 
-                    webBuilder.UseKestrel(opt => opt.Listen(IPAddress.Any, EnvironmentConfiguration.LocalPort));
+                    webBuilder.UseKestrel(opt => opt.Listen(IPAddress.Any, EnvironmentConfiguration.LocalAspNetWebApiPort));
                 });
         }
 
@@ -46,9 +46,11 @@ namespace Mega.WhatsAppAutomator.Api
                 ?? throw new Exception("ENV DATABASE_NAME not set");
             EnvironmentConfiguration.DatabaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
                 ?? throw new Exception("ENV DATABASE_URL not set");
+            EnvironmentConfiguration.DatabaseNeedsCertificate = (bool?)Convert.ToBoolean(Environment.GetEnvironmentVariable("DATABASE_NEEDS_CERT"))
+                ?? throw new Exception("DATABASE_NEEDS_CERT not set");
             EnvironmentConfiguration.IsRunningOnHeroku = (bool?)Convert.ToBoolean(Environment.GetEnvironmentVariable("IS_RUNNING_ON_HEROKU"))
                 ?? throw new Exception("ENV IS_RUNNING_ON_HEROKU not set");
-            EnvironmentConfiguration.LocalPort = (int?)Convert.ToInt32(Environment.GetEnvironmentVariable("LOCAL_API_PORT"))
+            EnvironmentConfiguration.LocalAspNetWebApiPort = (int?)Convert.ToInt32(Environment.GetEnvironmentVariable("LOCAL_API_PORT"))
                 ?? throw new Exception("LOCAL_API_PORT not set");
         }
     }

@@ -89,7 +89,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             while (true)
             {
-                // After x cycles, clean messages
+                // After x cycles, clean messages on whatsapp
                 var stp = new Stopwatch();
                 stp.Start();
                 var toBeSentMessages = await GetMessagesToBeSentAsync();

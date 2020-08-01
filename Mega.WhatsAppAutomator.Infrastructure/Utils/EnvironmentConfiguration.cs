@@ -7,10 +7,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 
         public static string DatabaseName { get; set; }
 
-        public static bool DoesDatabaseNeedsCertificate { get; set; }
+        public static bool DatabaseNeedsCertificate { get; set; }
 
         public static bool IsRunningOnHeroku { get; set; }
 
-        public static int LocalPort { get; set; }
+        public static int LocalAspNetWebApiPort { get; set; }
     }
 }

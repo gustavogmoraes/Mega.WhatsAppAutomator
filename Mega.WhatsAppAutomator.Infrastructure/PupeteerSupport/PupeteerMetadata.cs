@@ -17,15 +17,17 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         {
             "--no-sandbox",
             "--proxy-server='direct://'",
-            "--proxy-bypass-list=*"
+            "--proxy-bypass-list=*",
+            "--disable-infobars",
+            "--disable-notifications",
+            "--no-startup-window"
         };
-        
-            // "--disable-infobars",
-            // "--disable-notifications",
-            // "--window-position=0,0",
-            // "--ignore-certifcate-errors",
-            // "--ignore-certifcate-errors-spki-list",
-            // "--use-fake-ui-for-media-stream"
+       
+        // "--window-position=0,0",
+        // "--ignore-certifcate-errors",
+        // "--ignore-certifcate-errors-spki-list",
+        // "--use-fake-ui-for-media-stream"
+
         private static string UserDataDir
         {
             get
@@ -33,7 +35,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 var browserFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BrowserFiles");
                 if(!Directory.Exists(browserFilesDir))
                 {
-                    Directory.CreateDirectory(browserFilesDir);
+                    var directoryInfo = Directory.CreateDirectory(browserFilesDir);
+                    directoryInfo.Attributes &= ~FileAttributes.ReadOnly; // Removes read-only attribute
                 }
                 
                 return Path.Combine(browserFilesDir, "user-data-dir");

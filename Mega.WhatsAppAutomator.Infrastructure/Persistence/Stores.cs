@@ -74,7 +74,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Persistence
                 Database = databaseName
             };
 
-            documentStore.Certificate = new X509Certificate2(certificatePath, CertificatePassword);
+            if (EnvironmentConfiguration.DatabaseNeedsCertificate)
+            {
+                documentStore.Certificate = new X509Certificate2(certificatePath, CertificatePassword);
+            }
 
             documentStore.Initialize();
 
