@@ -94,10 +94,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 stp.Start();
                 var toBeSentMessages = await GetMessagesToBeSentAsync();
                 stp.Stop();
-                
+
+                var messagesIds = string.Join(", ", toBeSentMessages.Select(x => x.Id));
+                messagesIds = messagesIds.Remove(messagesIds.Length, 1);
+
                 Console.WriteLine(
                     $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +
-                    $"got {toBeSentMessages.Count} to be sent, request time: {stp.Elapsed.TimeSpanToReport()}");
+                    $"got {toBeSentMessages.Count} messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n" +
+                    $"Messages IDs = {messagesIds}");
                 
                 if (toBeSentMessages.Any())
                 {
