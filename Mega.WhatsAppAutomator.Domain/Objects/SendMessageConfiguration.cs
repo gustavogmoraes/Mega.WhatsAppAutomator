@@ -7,11 +7,9 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
         public int MaximumDelayBetweenCycles { get; set; }
         
         public int MaximumDelayBetweenMessages { get; set; }
+
+        public bool PriorityzeFinalClients { get; set; }
         
         public HumanizerConfiguration HumanizerConfiguration { get; set; }
-        
-        public bool UseMessagesByNumber { get; set; }
-        
-        public bool PriorityzeFinalClients { get; set; }
     }    
 }

@@ -113,7 +113,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
 				return true;
 			}
-			catch (Exception e)
+			catch (Exception)
 			{
 				return false;
 			}

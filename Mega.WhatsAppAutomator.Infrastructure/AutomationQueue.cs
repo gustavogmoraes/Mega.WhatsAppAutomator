@@ -34,7 +34,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
 
-            Task.Run(async () => await QueueExecution());
+            try
+            {
+                Task.Run(async () => await QueueExecution());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            
           
         }
 
@@ -87,27 +96,35 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task QueueExecution()
         {
-            while (true)
+            try
             {
-                // After x cycles, clean messages on whatsapp
-                var stp = new Stopwatch();
-                stp.Start();
-                var toBeSentMessages = await GetMessagesToBeSentAsync();
-                stp.Stop();
-
-                var messagesIds = string.Join(", ", toBeSentMessages.Select(x => x.Id));
-
-                Console.WriteLine(
-                    $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +
-                    $"got {toBeSentMessages.Count} messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n" +
-                    $"Messages IDs = {messagesIds}");
-                
-                if (toBeSentMessages.Any())
+                while (true)
                 {
-                    await SendListOfMessages(Page, toBeSentMessages);
-                }
+                    // After x cycles, clean messages on whatsapp
+                    var stp = new Stopwatch();
+                    stp.Start();
+                    var toBeSentMessages = await GetMessagesToBeSentAsync();
+                    stp.Stop();
 
-                Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenCycles)));
+                    var messagesIds = string.Join(", ", toBeSentMessages.Select(x => x.Id));
+
+                    Console.WriteLine(
+                        $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +
+                        $"got {toBeSentMessages.Count} messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n" +
+                        $"Messages IDs = {messagesIds}");
+                
+                    if (toBeSentMessages.Any())
+                    {
+                        await SendListOfMessages(Page, toBeSentMessages);
+                    }
+
+                    Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenCycles)));
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
             }
         }
 

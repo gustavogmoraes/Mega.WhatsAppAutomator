@@ -89,16 +89,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
         }
 
-		private static async Task StartListeningToMessagesAsync(Page page)
-		{
-
-			await page.ClickOnElementAsync(WhatsAppWebMetadata.Unread);
-
-			await page.ExposeFunctionAsync("newChat", async (string text) =>
-			{
-				Console.WriteLine(text);
-			});
-        }
+		// private static async Task StartListeningToMessagesAsync(Page page)
+		// {
+  //
+		// 	await page.ClickOnElementAsync(WhatsAppWebMetadata.Unread);
+  //
+		// 	await page.ExposeFunctionAsync("newChat", async (string text) =>
+		// 	{
+		// 		Console.WriteLine(text);
+		// 	});
+  //       }
 
         private static void StartQueue(Page page)
         {
@@ -112,7 +112,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 				_ = await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
 				return false;
 			}
-			catch (Exception e)
+			catch (Exception)
 			{
 				return true;
 			}
