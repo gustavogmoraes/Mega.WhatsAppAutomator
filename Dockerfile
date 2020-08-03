@@ -5,7 +5,8 @@ ENV DATABASE_NAME="Mega.WhatsAppApi" \
     DATABASE_NEEDS_CERT="true" \
     LOCAL_API_PORT="5000" \
     IS_RUNNING_ON_HEROKU="true" \
-    USE_HEADLESS_CHROMIUM="false"
+    USE_HEADLESS_CHROMIUM="true" \
+    INSTANCE_ID="Bot1GalaxyTab"
     
 EXPOSE 80
 EXPOSE 443

@@ -2,7 +2,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System;
 using System.IO;
+using System.IO.Compression;
+using System.Security.AccessControl;
+using Mega.WhatsAppAutomator.Domain.Objects;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
+using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
 using Extensions = PuppeteerSharp.Extensions;
@@ -45,13 +49,40 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             get
             {
                 var browserFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BrowserFiles");
+                var userDataDirPath = Path.Combine(browserFilesDir, "user-data-dir");
                 if(!Directory.Exists(browserFilesDir))
                 {
                     var directoryInfo = Directory.CreateDirectory(browserFilesDir);
-                    directoryInfo.Attributes &= ~FileAttributes.ReadOnly; // Removes read-only attribute
+                    var osPlat = DevOpsHelper.GetOsPlatform();
+                    if (osPlat != OSPlatform.Windows)
+                    {
+                        DevOpsHelper.Bash($"chmod 755 {browserFilesDir}");
+                    }
+                }
+
+                var instanceId = Environment.GetEnvironmentVariable("INSTANCE_ID");
+                
+                var zipPath = userDataDirPath + ".zip";
+                
+                Console.WriteLine("Trying to download user data file");
+                using var session = Stores.MegaWhatsAppApi.OpenSession();
+                var client = session.Query<Client>().FirstOrDefault(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1");
+                var att = session.Advanced.Attachments.Get(client, $"{instanceId}.zip");
+                if (att != null)
+                {
+                    Console.WriteLine($"Found file, downloading it {att.Details.Size.GetReadableFileSize()}");
+                    att.Stream.SaveStreamAsFile(zipPath);
+
+                    ZipFile.ExtractToDirectory(zipPath, userDataDirPath);
+                
+                    File.Delete(zipPath);
+
+                    return userDataDirPath;
                 }
                 
-                return Path.Combine(browserFilesDir, "user-data-dir");
+                Console.WriteLine("Did not find user data file, creating new");
+
+                return userDataDirPath;
             }
         }
 

@@ -38,6 +38,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             SmsReady = true;
             StartQueue(page);
         }
+        public static void ExitBrowser()
+        {
+            AutomationQueue.StopBrowser = true;
+        }
         
         public static async Task Start()
         {
@@ -51,7 +55,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             Console.WriteLine($"Trying to launch");
             var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions());
-                        
+
             var page = await browser.NewPageAsync();
             Console.WriteLine($"Launched, now going to page");
             await NavigateToWhatsAppWebPage(page);
@@ -68,9 +72,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             StartQueue(page);
             //await StartListeningToMessagesAsync();
             //StartListeningToMessagesAsync(page);
-            
-
-            
         }
 
         private static async Task WaitForSetup(Page page, TimeSpan timeout)
@@ -171,7 +172,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             Console.WriteLine("Getting QrCode");
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = (int?)Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
-            
+            Thread.Sleep(TimeSpan.FromSeconds(3));
             if(!Directory.Exists(FileManagement.ScreenshotsDirectory))
             {
                 Directory.CreateDirectory(FileManagement.ScreenshotsDirectory);

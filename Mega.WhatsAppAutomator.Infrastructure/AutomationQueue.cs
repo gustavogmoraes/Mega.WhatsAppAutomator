@@ -14,6 +14,11 @@ using Mega.WhatsAppAutomator.Infrastructure.TextNow;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using Raven.Client.Documents;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
+using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Raven.Client.Documents.Linq;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
@@ -93,12 +98,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         }
 
         public static SendMessageConfiguration ClientConfiguration { get; set; }
-
+        
+        public static bool StopBrowser { get; set; }
+        
         private static async Task QueueExecution()
         {
             try
             {
-                while (true)
+                while (!StopBrowser)
                 {
                     // After x cycles, clean messages on whatsapp
                     var stp = new Stopwatch();
@@ -120,12 +127,45 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
                     Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenCycles)));
                 }
+
+                await Page.Browser.CloseAsync();
+                SaveChromeUserData();
+                Environment.Exit(0);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+        private static void SaveChromeUserData()
+        {
+            var browserFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BrowserFiles");
+            var userDataDirPath = Path.Combine(browserFilesDir, "user-data-dir");
+            
+            var instanceId = Environment.GetEnvironmentVariable("INSTANCE_ID");
+            var zipPath = Path.Combine(browserFilesDir, instanceId + ".zip");
+            
+            ZipFile.CreateFromDirectory(userDataDirPath, zipPath);
+
+            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            var client = session.Query<Client>().FirstOrDefault(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1");
+            
+            Console.WriteLine("Saving user data file to database");
+            using (var stream = File.Open(zipPath, FileMode.Open))
+            {
+                session.Advanced.Attachments.Store(client, instanceId + ".zip", stream);
+                session.SaveChanges();
+            }
+            
+            var osPlat = DevOpsHelper.GetOsPlatform();
+            if (osPlat != OSPlatform.Windows)
+            {
+                DevOpsHelper.Bash($"chmod 755 {browserFilesDir}");
+            }
+            
+            File.Delete(browserFilesDir);
         }
 
         private static async Task SendListOfMessages(Page page, List<ToBeSent> toBeSentMessages)
@@ -278,5 +318,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 Console.WriteLine($"Message to {message.Number} delegated via Mega.SmsAutomator");
             }
         }
+
+        
     }
 }

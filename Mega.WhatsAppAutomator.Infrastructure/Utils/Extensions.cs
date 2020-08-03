@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -125,6 +126,28 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         public static string TimeSpanToReport(this TimeSpan ts)
         {
             return new DateTime(ts.Ticks).ToString("mm:ss");
+        }
+        
+        public static void SaveStreamAsFile(this Stream inputStream, string filePath) 
+        {
+            using FileStream outputFileStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite);
+            
+            inputStream.CopyTo(outputFileStream);
+        }
+
+        public static string GetReadableFileSize(this long length)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            double len = Convert.ToDouble(length);
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1) {
+                order++;
+                len = len/1024;
+            }
+
+            // Adjust the format string to your preferences. For example "{0:0.#}{1}" would
+            // show a single decimal place, and no space.
+            return string.Format("{0:0.##} {1}", len, sizes[order]);
         }
     }
 }

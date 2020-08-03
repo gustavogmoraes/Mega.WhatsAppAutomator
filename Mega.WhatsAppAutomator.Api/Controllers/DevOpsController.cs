@@ -30,5 +30,13 @@ namespace Mega.WhatsAppAutomator.Api.Controllers
 
             return Ok();
         }
+        
+        [HttpGet("[action]")]
+        public ActionResult Exit()
+        {
+            AutomationStartup.ExitBrowser();
+
+            return Ok();
+        }
     }
 }
