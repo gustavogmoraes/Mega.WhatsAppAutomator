@@ -12,22 +12,34 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
     public static class PupeteerMetadata
     {
         public static string CustomUserAgentForHeadless => @"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36";
-        //"--disable-gpu", "--no-sandbox",
+        
         public static string[] CustomsArgsForHeadless => new []
         {
-            "--no-sandbox",
-            "--proxy-server='direct://'",
-            "--proxy-bypass-list=*",
+            // "--proxy-server='direct://'",
+            // "--proxy-bypass-list=*",
+            // "--use-fake-ui-for-media-stream",
+            "--log-level=3",
+            "--no-default-browser-check",
             "--disable-infobars",
             "--disable-notifications",
-            "--no-startup-window"
+            "--disable-web-security",
+            "--disable-site-isolation-trials",
+            "--no-experiments",
+            "--ignore-gpu-blacklist",
+            "--ignore-certificate-errors",
+            "--ignore-certificate-errors-spki-list",
+            //"--disable-gpu",
+            "--disable-extensions",
+            "--disable-default-apps",
+            "--enable-features=NetworkService",
+            "--disable-setuid-sandbox",
+            "--no-sandbox"
         };
        
         // "--window-position=0,0",
         // "--ignore-certifcate-errors",
         // "--ignore-certifcate-errors-spki-list",
-        // "--use-fake-ui-for-media-stream"
-
+        
         private static string UserDataDir
         {
             get
@@ -56,7 +68,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             {
                 Headless = Headless,
                 ExecutablePath = ExecutablePath,
-                Args = Headless ? CustomsArgsForHeadless : new string[] { },
+                Args = CustomsArgsForHeadless,
                 UserDataDir = UserDataDir
             };
         }
