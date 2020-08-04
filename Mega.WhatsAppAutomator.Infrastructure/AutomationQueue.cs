@@ -74,8 +74,18 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task<List<ToBeSent>> GetMessagesToBeSentAsync()
         {
-            GetClientConfig();
             var returnList = await GetReturnListAsync();
+            if (!returnList.Any() && ClientConfiguration.PriorityzeFinalClients)
+            {
+                Console.WriteLine("Did not get any final client messages, changing configuration");
+                using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
+                var client = await session.Query<Client>()
+                    .FirstOrDefaultAsync(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1");
+
+                client.SendMessageConfiguration.PriorityzeFinalClients = false;
+
+                await session.SaveChangesAsync();
+            }
 
             foreach (var x in returnList)
             {
@@ -88,7 +98,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return returnList;
         }
 
-        private static void GetClientConfig()
+        private static void GetAndSetClientConfig()
         {
             using var session = Stores.MegaWhatsAppApi.OpenSession();
             ClientConfiguration = session.Query<Client>()
@@ -107,22 +117,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 while (!StopBrowser)
                 {
-                    // After x cycles, clean messages on whatsapp
-                    var stp = new Stopwatch();
-                    stp.Start();
-                    var toBeSentMessages = await GetMessagesToBeSentAsync();
-                    stp.Stop();
-
-                    var messagesIds = string.Join(", ", toBeSentMessages.Select(x => x.Id));
-
-                    Console.WriteLine(
-                        $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +
-                        $"got {toBeSentMessages.Count} messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n" +
-                        $"Messages IDs = {messagesIds}");
-                
-                    if (toBeSentMessages.Any())
+                    //TO DO: After x cycles, clean messages on Whatsapp
+                    GetAndSetClientConfig();
+                    
+                    if (ClientConfiguration.SendMessagesGroupedByNumber)
                     {
-                        await SendListOfMessages(Page, toBeSentMessages);
+                        await SendMessagesGroupingByNumber();
+                    }
+                    else
+                    {
+                        await SendMessagesNoStrategy();
                     }
 
                     Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenCycles)));
@@ -136,6 +140,99 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 Console.WriteLine(e);
                 throw;
+            }
+        }
+
+        private static async Task SendMessagesGroupingByNumber()
+        {
+            var stp = new Stopwatch();
+            stp.Start();
+            var groupsOfMessagesByNumber = await GetMessagesToBeSentByGroupAsync();
+            stp.Stop();
+
+            Console.WriteLine(
+                $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of messages grouped by number  {ClientConfiguration.MessagesPerCycleNumberGroupingStrategy} messages, " +
+                $"got {groupsOfMessagesByNumber.Count} groups of messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n");
+
+
+            if (groupsOfMessagesByNumber.Any())
+            {
+                await SendGroupOfMessagesByNumber(Page, groupsOfMessagesByNumber);
+            }
+        }
+
+        private static async Task SendGroupOfMessagesByNumber(Page page, List<IGrouping<string,ToBeSent>> groupsOfMessagesByNumber)
+        {
+            foreach (var group in groupsOfMessagesByNumber)
+            {
+                await WhatsAppWebTasks.SendMessageGroupedByNumber(page, group.Key, group.Select(x => x.Message.Text).ToList());
+            }
+            
+            var outerStp =  new Stopwatch();
+            outerStp.Start();
+            var count = 0;
+            var total = toBeSentMessages.Count;
+            foreach (var message in toBeSentMessages)
+            {
+                count++;
+                var stp = new Stopwatch();
+                stp.Start();
+                await WhatsAppWebTasks.SendMessage(page, message.Message);
+                if (!ClientConfiguration.HumanizerConfiguration.InsaneMode) { SleepRandomTimeBasedOnConfiguration(); }
+                stp.Stop();
+                
+                Console.WriteLine($"\tAt {DateTime.UtcNow.ToBraziliaDateTime()}, sent a messsage of {message.Message.Text.Length} characters in {stp.Elapsed.TimeSpanToReport()} - {count}/{total}");
+            }
+            
+            TickSentMessages(toBeSentMessages);
+            outerStp.Stop();
+            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent {count} messages, on: {outerStp.Elapsed.TimeSpanToReport()}");
+        }
+
+        private static async Task<List<IGrouping<string, ToBeSent>>> GetMessagesToBeSentByGroupAsync()
+        {
+            List<ToBeSent> items;
+            using (var session = Stores.MegaWhatsAppApi.OpenSession())
+            {
+                items = session.Query<ToBeSent>()
+                    .OrderBy(x => x.EntryTime)
+                    .Take(ClientConfiguration.MessagesPerCycleNumberGroupingStrategy)
+                    .ToList();
+            }
+
+            var nmberGrouping = items.GroupBy(x => x.Message.Number).ToList();
+            
+            foreach (var group in nmberGrouping)
+            {
+                foreach (var message in group.ToList())
+                {
+                    using var session2 = Stores.MegaWhatsAppApi.OpenAsyncSession();
+                    var tbS = await session2.LoadAsync<ToBeSent>(message.Id);
+                    tbS.CurrentlyProcessingOnAnotherInstance = true;
+                    await session2.SaveChangesAsync();
+                }
+            }
+            
+            return nmberGrouping;
+        }
+
+        private static async Task SendMessagesNoStrategy()
+        {
+            var stp = new Stopwatch();
+            stp.Start();
+            var toBeSentMessages = await GetMessagesToBeSentAsync();
+            stp.Stop();
+
+            var messagesIds = string.Join(", ", toBeSentMessages.Select(x => x.Id));
+
+            Console.WriteLine(
+                $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +
+                $"got {toBeSentMessages.Count} messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n" +
+                $"Messages IDs = {messagesIds}");
+
+            if (toBeSentMessages.Any())
+            {
+                await SendListOfMessages(Page, toBeSentMessages);
             }
         }
 

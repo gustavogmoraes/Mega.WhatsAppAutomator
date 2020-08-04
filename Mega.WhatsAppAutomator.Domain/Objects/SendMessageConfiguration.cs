@@ -11,5 +11,9 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
         public bool PriorityzeFinalClients { get; set; }
         
         public HumanizerConfiguration HumanizerConfiguration { get; set; }
+        
+        public bool SendMessagesGroupedByNumber { get; set; }
+        
+        public int MessagesPerCycleNumberGroupingStrategy { get; set; }
     }    
 }

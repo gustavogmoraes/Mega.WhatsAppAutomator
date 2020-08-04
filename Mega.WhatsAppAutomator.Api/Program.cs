@@ -1,9 +1,12 @@
 using System;
+using System.Linq;
 using System.Net;
 using Mega.WhatsAppAutomator.Api.ApiUtils;
+using Mega.WhatsAppAutomator.Domain.Objects;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Mega.WhatsAppAutomator.Infrastructure;
+using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 
 namespace Mega.WhatsAppAutomator.Api
@@ -14,7 +17,7 @@ namespace Mega.WhatsAppAutomator.Api
         {
             // Sets running configs based on environment variables
             SetRunningConfiguration();
-
+            
             var apiHost = CreateHostBuilder(args).Build();
 
             // Creates automation

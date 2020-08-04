@@ -18,33 +18,91 @@ namespace Mega.WhatsAppAutomator.Infrastructure
     public static class WhatsAppWebTasks
     {
         private static HumanizerConfiguration Humanizer { get; set; }
+        
         public static async Task SendMessage(Page page, Message message)
         {
-            if(message.Number == "+551291828152")
-            {
-                message.Number = "+5512991828152";
-            }
-            var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(message.Number);            
-            await page.EvaluateExpressionAsync(openChatExpression);
-            Thread.Sleep(TimeSpan.FromSeconds(0.5));
+            var messageNumber = message.Number;
+            TreatStrangeNumbers(ref messageNumber);
 
-            //var teste = await page.QuerySelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
-            //if (teste != null)
-            //{
-            //    await page.ClickOnElementAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
-            //    return;
-            //}
+            await OpenChat(page, messageNumber);
+
             if (await CheckIfNumberExists(page))
 			{
-                //Thread.Sleep(TimeSpan.FromSeconds(0.5));
-				await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+                await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
 				await StoreNotDeliveredMessage(message);
 				return;
 			}
 
-			await SendHumanizedMessage(page, message.Text, message.Number);
+			await SendHumanizedMessage(page, message.Text, messageNumber);
         }
 
+        public static async Task SendMessageGroupedByNumber(Page page, string number, List<string> listOfTexts)
+        {
+            TreatStrangeNumbers(ref number);
+            
+            await OpenChat(page, number);
+            
+            if (await CheckIfNumberExists(page))
+            {
+                await DismissErrorAndStoreNotDelivereds(page, number, listOfTexts);
+                return;
+            }
+
+            await SendHumanizedMessageByNumberGroups(page, number, listOfTexts);
+        }
+        
+        private static async Task SendHumanizedMessageByNumberGroups(Page page, string number, List<string> texts)
+        {
+            Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
+            var clientName = "Laboratório HLAGyn";
+            var random = new Random();
+            
+            // Greetings
+            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
+            {
+                await SendGreetings(page, clientName, random);
+            }
+            
+            // Message
+            await SendGroupOfMessages(page, texts, random);
+            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage)));
+            }
+            
+            // Farewell
+            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
+            {
+                await SendFarewell(page, clientName);
+            }
+        }
+
+        private static async Task DismissErrorAndStoreNotDelivereds(Page page, string number, List<string> listOfTexts)
+        {
+            await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+            foreach (var text in listOfTexts)
+            {
+                await StoreNotDeliveredMessage(new Message
+                {
+                    Number = number,
+                    Text = text
+                });
+            }
+        }
+        private static void TreatStrangeNumbers(ref string number)
+        {
+            if(number == "+551291828152")
+            {
+                number = "+5512991828152";
+            }
+        }
+        
+        private static async Task OpenChat(Page page, string number)
+        {
+            var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(number);
+            await page.EvaluateExpressionAsync(openChatExpression);
+            Thread.Sleep(TimeSpan.FromSeconds(0.5));
+        }
         private static async Task SendHumanizedMessage(Page page, string messageText, string number)
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
@@ -85,6 +143,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 Humanizer.MaximumMessageTypingDelay), true);
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
         }
+        
+        private static async Task SendGroupOfMessages(Page page, List<string> texts, Random random)
+        {
+            var finalText = string.Join("\r\n", texts);
+            throw new NotImplementedException();
+        }
 
         private static async Task SendGreetings(Page page, string clientName, Random random)
         {
@@ -95,8 +159,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
             Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterGreeting, Humanizer.MaximumDelayAfterGreeting)));
         }
-
-
+        
         private static string GetClientPresentation(string clientName)
         {
             return Humanizer.ClientPresentationsPool.Random().Replace("{clientName}", clientName);
@@ -142,6 +205,5 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             });
             await session.SaveChangesAsync();
         }
-
     }
 }
