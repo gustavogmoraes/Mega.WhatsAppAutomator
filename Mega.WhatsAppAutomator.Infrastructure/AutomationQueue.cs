@@ -20,6 +20,7 @@ using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Raven.Client.Documents.Linq;
+using System.Text.RegularExpressions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -167,26 +168,29 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 await WhatsAppWebTasks.SendMessageGroupedByNumber(page, group.Key, group.Select(x => x.Message.Text).ToList());
             }
+            TickSentMessages(groupsOfMessagesByNumber.SelectMany(x => x.ToList()).ToList());
+
             
-            var outerStp =  new Stopwatch();
-            outerStp.Start();
-            var count = 0;
-            var total = toBeSentMessages.Count;
-            foreach (var message in toBeSentMessages)
-            {
-                count++;
-                var stp = new Stopwatch();
-                stp.Start();
-                await WhatsAppWebTasks.SendMessage(page, message.Message);
-                if (!ClientConfiguration.HumanizerConfiguration.InsaneMode) { SleepRandomTimeBasedOnConfiguration(); }
-                stp.Stop();
-                
-                Console.WriteLine($"\tAt {DateTime.UtcNow.ToBraziliaDateTime()}, sent a messsage of {message.Message.Text.Length} characters in {stp.Elapsed.TimeSpanToReport()} - {count}/{total}");
-            }
-            
-            TickSentMessages(toBeSentMessages);
-            outerStp.Stop();
-            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent {count} messages, on: {outerStp.Elapsed.TimeSpanToReport()}");
+            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent group of messages");
+
+            //var outerStp =  new Stopwatch();
+            //outerStp.Start();
+            //var count = 0;
+            //var total = toBeSentMessages.Count;
+            //foreach (var message in toBeSentMessages)
+            //{
+            //    count++;
+            //    var stp = new Stopwatch();
+            //    stp.Start();
+            //    await WhatsAppWebTasks.SendMessage(page, message.Message);
+            //    if (!ClientConfiguration.HumanizerConfiguration.InsaneMode) { SleepRandomTimeBasedOnConfiguration(); }
+            //    stp.Stop();
+
+            //    Console.WriteLine($"\tAt {DateTime.UtcNow.ToBraziliaDateTime()}, sent a messsage of {message.Message.Text.Length} characters in {stp.Elapsed.TimeSpanToReport()} - {count}/{total}");
+            //}
+
+            //outerStp.Stop();
+            //Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent {count} messages, on: {outerStp.Elapsed.TimeSpanToReport()}");
         }
 
         private static async Task<List<IGrouping<string, ToBeSent>>> GetMessagesToBeSentByGroupAsync()

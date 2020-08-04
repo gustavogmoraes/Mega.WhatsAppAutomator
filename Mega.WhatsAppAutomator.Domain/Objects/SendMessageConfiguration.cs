@@ -15,5 +15,6 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
         public bool SendMessagesGroupedByNumber { get; set; }
         
         public int MessagesPerCycleNumberGroupingStrategy { get; set; }
+
     }    
 }

@@ -141,13 +141,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
             await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, random.Next(Humanizer.MinimumMessageTypingDelay, 
                 Humanizer.MaximumMessageTypingDelay), true);
-            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+            //await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
         }
         
         private static async Task SendGroupOfMessages(Page page, List<string> texts, Random random)
         {
             var finalText = string.Join("\r\n", texts);
-            throw new NotImplementedException();
+            await SendMessage(page, finalText, random);
         }
 
         private static async Task SendGreetings(Page page, string clientName, Random random)

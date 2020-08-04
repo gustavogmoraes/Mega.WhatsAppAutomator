@@ -32,11 +32,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             var page = await browser.NewPageAsync();
             Console.WriteLine($"Launched, now going to page");
 
-            await NavigateToTextNowPage(page);
-            
-            //await Portabilidade.Start(browser);
-            SmsReady = true;
             StartQueue(page);
+
+            //await NavigateToTextNowPage(page);
+
+            //await Portabilidade.Start(browser);
+            //SmsReady = true;
+
         }
         public static void ExitBrowser()
         {
@@ -170,6 +172,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public static async Task GetQrCode(Page page)
         {
             Console.WriteLine("Getting QrCode");
+            Thread.Sleep(5000);
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = (int?)Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
             Thread.Sleep(TimeSpan.FromSeconds(3));
             if(!Directory.Exists(FileManagement.ScreenshotsDirectory))

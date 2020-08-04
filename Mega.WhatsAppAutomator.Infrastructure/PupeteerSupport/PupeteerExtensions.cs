@@ -27,42 +27,42 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             };
         }
 
-        public static async Task SaveCookiesAsync(this Page page, string cookiesPath) 
-        {
-            // This gets all cookies from all URLs, not just the current URL
-            var client = await page.Target.CreateCDPSessionAsync();
+        //public static async Task SaveCookiesAsync(this Page page, string cookiesPath) 
+        //{
+        //    // This gets all cookies from all URLs, not just the current URL
+        //    var client = await page.Target.CreateCDPSessionAsync();
 
-            var cookiesJToken = (await client.SendAsync("Network.getAllCookies"))["cookies"];
-            var cookiesDynamic = ((JArray)cookiesJToken).ToObject<CookieParam[]>();
+        //    var cookiesJToken = (await client.SendAsync("Network.getAllCookies"))["cookies"];
+        //    var cookiesDynamic = ((JArray)cookiesJToken).ToObject<CookieParam[]>();
 
-            await File.WriteAllTextAsync(cookiesPath, JsonConvert.SerializeObject(cookiesDynamic));
-        }
+        //    await File.WriteAllTextAsync(cookiesPath, JsonConvert.SerializeObject(cookiesDynamic));
+        //}
 
-        public static async Task RestoreCookiesAsync(this Page page, string cookiesPath) 
-        {
-            try 
-            {
-                var cookiesJson = await File.ReadAllTextAsync(cookiesPath);
-                var cookies = JsonConvert.DeserializeObject<CookieParam[]>(cookiesJson);
+        //public static async Task RestoreCookiesAsync(this Page page, string cookiesPath) 
+        //{
+        //    try 
+        //    {
+        //        var cookiesJson = await File.ReadAllTextAsync(cookiesPath);
+        //        var cookies = JsonConvert.DeserializeObject<CookieParam[]>(cookiesJson);
 
-                await page.SetCookieAsync(cookies);
-            } 
-            catch (Exception err) 
-            {
-                Console.WriteLine("Restore cookie error", err);
-            }
-        }
+        //        await page.SetCookieAsync(cookies);
+        //    } 
+        //    catch (Exception err) 
+        //    {
+        //        Console.WriteLine("Restore cookie error", err);
+        //    }
+        //}
 
-        public static async Task PasteOnElementAsync(this Page page, string elementSelector, string text)
-        {
-            var temp = await ClipboardService.GetTextAsync();
-            var pieces = text.Split(new string[] { "\r\n", "\n\r" }, StringSplitOptions.RemoveEmptyEntries).ToList();
-            var mensage = String.Join('\n', pieces);
-            await ClipboardService.SetTextAsync(mensage);
-            await page.FocusAsync(elementSelector);
-            await page.PressControlPaste();
-            await ClipboardService.SetTextAsync(temp);
-        }
+        //public static async Task PasteOnElementAsync(this Page page, string elementSelector, string text)
+        //{
+        //    var temp = await ClipboardService.GetTextAsync();
+        //    var pieces = text.Split(new string[] { "\r\n", "\n\r" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        //    var mensage = String.Join('\n', pieces);
+        //    await ClipboardService.SetTextAsync(mensage);
+        //    await page.FocusAsync(elementSelector);
+        //    await page.PressControlPaste();
+        //    await ClipboardService.SetTextAsync(temp);
+        //}
 
 
         public static async Task TypeOnElementAsync(this Page page, string elementSelector, string text, int? delayInMs = null, bool useParser = false)
