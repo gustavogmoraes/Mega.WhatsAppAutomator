@@ -165,7 +165,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 DevOpsHelper.Bash($"chmod 755 {browserFilesDir}");
             }
             
-            File.Delete(browserFilesDir);
+            // For some reason gives me Permission denied
+            //File.Delete(browserFilesDir);
         }
 
         private static async Task SendListOfMessages(Page page, List<ToBeSent> toBeSentMessages)

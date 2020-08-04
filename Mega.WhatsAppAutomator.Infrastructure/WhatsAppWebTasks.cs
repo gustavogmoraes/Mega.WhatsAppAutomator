@@ -50,37 +50,51 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             var clientName = "Laboratório HLAGyn";
             var random = new Random();
-
-            if (!GetCollaboratorNumbers().Contains(number))
+            
+            // Greetings
+            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
             {
-                // Greetings
-                await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedGreeting(clientName));
-                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-                Thread.Sleep(TimeSpan.FromSeconds(random.Next(1, 3)));
-                //
+                await SendGreetings(page, clientName, random);
             }
             
-            // The message
-            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, 0, true);
-            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            if (!GetCollaboratorNumbers().Contains(number))
+            // Message
+            await SendMessage(page, messageText, random);
+            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
             {
-                Thread.Sleep(TimeSpan.FromSeconds(random.Next(1, 3)));
+                Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage)));
             }
-            //
-
-            if (!GetCollaboratorNumbers().Contains(number))
+            
+            // Farewell
+            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
             {
-                // Farewell
-                await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-                await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell(clientName));
-                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-                //
+                await SendFarewell(page, clientName);
             }
         }
 
+        private static async Task SendFarewell(Page page, string clientName)
+        {
+            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell(clientName));
+            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+        }
 
+        private static async Task SendMessage(Page page, string messageText, Random random)
+        {
+            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, random.Next(Humanizer.MinimumMessageTypingDelay, 
+                Humanizer.MaximumMessageTypingDelay), true);
+            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+        }
+
+        private static async Task SendGreetings(Page page, string clientName, Random random)
+        {
+            await page.TypeOnElementAsync(
+                WhatsAppWebMetadata.ChatContainer,
+                GetHumanizedGreeting(clientName),
+                random.Next(Humanizer.MinimumGreetingTypingDelay, Humanizer.MaximumGreetingTypingDelay));
+            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+            Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterGreeting, Humanizer.MaximumDelayAfterGreeting)));
+        }
 
 
         private static string GetClientPresentation(string clientName)
@@ -90,7 +104,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         private static string GetHumanizedGreeting(string clientName)
         {
-            return $"  {Humanizer.GreetingsPool.Random()} {Humanizer.CumplimentsPool.Random()}\r\n" +
+            return $"{Humanizer.GreetingsPool.Random()} {Humanizer.CumplimentsPool.Random()}\r\n" +
                    $"{GetClientPresentation(clientName)}";
         }
         
@@ -98,8 +112,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             return Humanizer.FarewellsPool.Random();
         }
-
-
+        
         private static IList<string> GetCollaboratorNumbers()
         {
             return  Humanizer.CollaboratorsContacts;

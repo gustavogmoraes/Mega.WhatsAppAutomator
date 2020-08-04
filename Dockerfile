@@ -4,12 +4,13 @@ ENV DATABASE_NAME="Mega.WhatsAppApi" \
     DATABASE_URL="https://a.free.gsoftware.ravendb.cloud/" \
     DATABASE_NEEDS_CERT="true" \
     LOCAL_API_PORT="5000" \
-    IS_RUNNING_ON_HEROKU="true" \
+    IS_RUNNING_ON_HEROKU="false" \
     USE_HEADLESS_CHROMIUM="true" \
     INSTANCE_ID="Bot1GalaxyTab"
     
 EXPOSE 80
 EXPOSE 443
+EXPOSE 5000
 
 WORKDIR /app
 COPY Output/* /app/

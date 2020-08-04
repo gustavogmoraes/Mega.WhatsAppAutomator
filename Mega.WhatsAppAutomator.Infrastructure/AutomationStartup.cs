@@ -40,6 +40,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         }
         public static void ExitBrowser()
         {
+            Console.WriteLine("Received stop request, after the running cycle ends we will stop");
             AutomationQueue.StopBrowser = true;
         }
         
@@ -92,14 +93,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
 		// private static async Task StartListeningToMessagesAsync(Page page)
 		// {
-  //
-		// 	await page.ClickOnElementAsync(WhatsAppWebMetadata.Unread);
-  //
-		// 	await page.ExposeFunctionAsync("newChat", async (string text) =>
+        // 	await page.ClickOnElementAsync(WhatsAppWebMetadata.Unread);
+        // 	await page.ExposeFunctionAsync("newChat", async (string text) =>
 		// 	{
 		// 		Console.WriteLine(text);
 		// 	});
-  //       }
+        //}
 
         private static void StartQueue(Page page)
         {
