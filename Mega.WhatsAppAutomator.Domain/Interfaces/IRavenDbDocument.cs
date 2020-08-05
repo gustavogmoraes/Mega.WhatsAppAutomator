@@ -1,4 +1,4 @@
-﻿namespace Mega.WhatsAppAutomator.Infrastructure.Utils
+﻿namespace Mega.WhatsAppAutomator.Domain.Interfaces
 {
 	public interface IRavenDbDocument
 	{

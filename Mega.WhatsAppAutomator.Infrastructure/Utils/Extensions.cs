@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Security;
 using System.Text;
+using Mega.WhatsAppAutomator.Domain.Interfaces;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Commands.Batches;
+using Raven.Client.Documents.Operations;
+using Raven.Client.Documents.Queries;
 using Raven.Client.Documents.Session;
 using Sparrow.Json;
 using Sparrow.Json.Parsing;
@@ -155,20 +160,61 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 			return string.Format("{0:0.##} {1}", len, sizes[order]);
 		}
 
-		public static void BulkUpdate<T>(this IDocumentSession session, IList<T> items)
+		public static void BulkUpdate<T>(this IDocumentStore documentStore, IList<T> items)
 			where T : class, IRavenDbDocument, new()
 		{
-			var batchCommand = new BatchCommand(
-				session.Advanced.DocumentStore.Conventions,
-				JsonOperationContext.ShortTermSingleUse(),
-				items.Select(x => new PutCommandData(
-						x.Id,
-						null,
-						DynamicJsonValue.Convert(x.ToDictionary<object>())))
-					.OfType<ICommandData>().ToList());
-
-			session.Advanced.RequestExecutor.Execute(batchCommand, session.Advanced.Context);
+			throw new NotImplementedException();
 		}
+		
+		public static void BulkUpdate<T>(this IDocumentStore documentStore, IList<T> items, Expression<Func<T, object>> propertyToChange, object valueToBePut)
+			where T : class, IRavenDbDocument, new()
+		{
+			var collectionName = typeof(T).Name + "s";
+			var propertyInfo = (PropertyInfo)GetPropertyFromExpression(propertyToChange);
+			var ids = "'" + string.Join("', '", items.Select(x => x.Id)) + "'";
+			
+			var query =
+				$@"from {collectionName} as x 
+				   where id() in ({ids}) 
+				   update 
+				   {{	
+						x.{propertyInfo.Name} = {valueToBePut.ToString().ToLowerInvariant()}; 
+				   }}";
+			
+			var operation = documentStore
+				.Operations
+				.Send(new PatchByQueryOperation(new IndexQuery { Query = query }));
+
+			operation.WaitForCompletion();
+		}
+		
+		public static MemberInfo GetPropertyFromExpression(this LambdaExpression propertyLambda)
+		{
+			MemberExpression Exp = null;
+
+			//this line is necessary, because sometimes the expression comes in as Convert(originalexpression)
+			if (propertyLambda.Body is UnaryExpression)
+			{
+				var UnExp = (UnaryExpression)propertyLambda.Body;
+				if (UnExp.Operand is MemberExpression)
+				{
+					Exp = (MemberExpression)UnExp.Operand;
+				}
+				else
+					throw new ArgumentException();
+			}
+			else if (propertyLambda.Body is MemberExpression)
+			{
+				Exp = (MemberExpression)propertyLambda.Body;
+			}
+			else
+			{
+				throw new ArgumentException();
+			}
+
+			return Exp.Member;
+		}
+		
 
 		public static Dictionary<string, TValue> ToDictionary<TValue>(this object obj)
 		{

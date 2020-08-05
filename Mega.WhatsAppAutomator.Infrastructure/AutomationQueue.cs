@@ -164,59 +164,43 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task SendGroupOfMessagesByNumber(Page page, List<IGrouping<string,ToBeSent>> groupsOfMessagesByNumber)
         {
+            var outerStopwatch = new Stopwatch();
+            outerStopwatch.Start();
             foreach (var group in groupsOfMessagesByNumber)
             {
-                await WhatsAppWebTasks.SendMessageGroupedByNumber(page, group.Key, group.Select(x => x.Message.Text).ToList());
+                var number = group.Key;
+                var texts = group.Select(x => x.Message.Text).ToList();
+                
+                Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Writing {texts.Count} messages to number {number}");
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+                await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
+                stopwatch.Stop();
+                Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Sent {texts.Count} messages to number {number}");
+                
+                Thread.Sleep(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages));
             }
             TickSentMessages(groupsOfMessagesByNumber.SelectMany(x => x.ToList()).ToList());
-
             
-            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent group of messages");
-
-            //var outerStp =  new Stopwatch();
-            //outerStp.Start();
-            //var count = 0;
-            //var total = toBeSentMessages.Count;
-            //foreach (var message in toBeSentMessages)
-            //{
-            //    count++;
-            //    var stp = new Stopwatch();
-            //    stp.Start();
-            //    await WhatsAppWebTasks.SendMessage(page, message.Message);
-            //    if (!ClientConfiguration.HumanizerConfiguration.InsaneMode) { SleepRandomTimeBasedOnConfiguration(); }
-            //    stp.Stop();
-
-            //    Console.WriteLine($"\tAt {DateTime.UtcNow.ToBraziliaDateTime()}, sent a messsage of {message.Message.Text.Length} characters in {stp.Elapsed.TimeSpanToReport()} - {count}/{total}");
-            //}
-
-            //outerStp.Stop();
-            //Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent {count} messages, on: {outerStp.Elapsed.TimeSpanToReport()}");
+            outerStopwatch.Stop();
+            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent group of messages in {outerStopwatch.Elapsed.TimeSpanToReport()}");
         }
 
         private static async Task<List<IGrouping<string, ToBeSent>>> GetMessagesToBeSentByGroupAsync()
         {
             List<ToBeSent> items;
-            using (var session = Stores.MegaWhatsAppApi.OpenSession())
+            using (var session = Stores.MegaWhatsAppApi.OpenAsyncSession())
             {
-                items = session.Query<ToBeSent>()
+                items = await session.Query<ToBeSent>()
+                    .Where(x =>x.CurrentlyProcessingOnAnotherInstance != true)
                     .OrderBy(x => x.EntryTime)
                     .Take(ClientConfiguration.MessagesPerCycleNumberGroupingStrategy)
-                    .ToList();
+                    .ToListAsync();
             }
-
+            
+            Stores.MegaWhatsAppApi.BulkUpdate(items, x => x.CurrentlyProcessingOnAnotherInstance, true);
+            
             var nmberGrouping = items.GroupBy(x => x.Message.Number).ToList();
-            
-            foreach (var group in nmberGrouping)
-            {
-                foreach (var message in group.ToList())
-                {
-                    using var session2 = Stores.MegaWhatsAppApi.OpenAsyncSession();
-                    var tbS = await session2.LoadAsync<ToBeSent>(message.Id);
-                    tbS.CurrentlyProcessingOnAnotherInstance = true;
-                    await session2.SaveChangesAsync();
-                }
-            }
-            
             return nmberGrouping;
         }
 

@@ -1,8 +1,9 @@
 using System;
+using Mega.WhatsAppAutomator.Domain.Interfaces;
 
 namespace Mega.WhatsAppAutomator.Domain.Objects
 {
-    public class ToBeSent
+    public class ToBeSent : IRavenDbDocument
     {
         public string Id { get; set; }
         

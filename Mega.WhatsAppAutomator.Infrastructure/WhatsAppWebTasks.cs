@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -11,6 +12,8 @@ using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
 using PuppeteerSharp.Input;
+using Raven.Client;
+using Raven.Client.Documents.Operations.Configuration;
 using Raven.Client.ServerWide.Operations;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
@@ -56,26 +59,24 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             var clientName = "Laboratório HLAGyn";
             var random = new Random();
+
+            var useHumanizationMessages = UseHumanizationMessages(number);
             
             // Greetings
-            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
-            {
-                await SendGreetings(page, clientName, random);
-            }
-            
+            if (useHumanizationMessages) { await SendGreetings(page, clientName, random); }
+
             // Message
             await SendGroupOfMessages(page, texts, random);
-            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
-            {
-                Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage)));
-            }
+            if (useHumanizationMessages) { Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage))); }
             
             // Farewell
-            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
-            {
-                await SendFarewell(page, clientName);
-            }
+            if (useHumanizationMessages) { await SendFarewell(page, clientName); }
         }
+        
+        private static bool UseHumanizationMessages(string number) =>
+            !Humanizer.InsaneMode && 
+            Humanizer.UseHumanizer && 
+            !GetCollaboratorNumbers().Contains(number);
 
         private static async Task DismissErrorAndStoreNotDelivereds(Page page, string number, List<string> listOfTexts)
         {
@@ -136,17 +137,36 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
         }
 
-        private static async Task SendMessage(Page page, string messageText, Random random)
+        private static async Task SendMessage(Page page, string messageText, Random random, bool sendAfterTyping = true)
         {
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, messageText, random.Next(Humanizer.MinimumMessageTypingDelay, 
-                Humanizer.MaximumMessageTypingDelay), true);
-            //await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+            await page.TypeOnElementAsync(
+                WhatsAppWebMetadata.ChatContainer,
+                messageText,
+                delayInMs: Humanizer.InsaneMode ? 0 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay),
+                useParser: true);
+            if (sendAfterTyping)
+            {
+                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+            }
         }
         
         private static async Task SendGroupOfMessages(Page page, List<string> texts, Random random)
         {
-            var finalText = string.Join("\r\n", texts);
+            var finalText = string.Empty;
+
+            foreach (var text in texts)
+            {
+                finalText += text;
+                if (text.Contains("\r\n") || text.Contains("\r\n"))
+                {
+                    finalText += "\n"; // this will send the message.
+                    continue;
+                }
+
+                finalText += "\r\n";
+            }
+            
             await SendMessage(page, finalText, random);
         }
 
