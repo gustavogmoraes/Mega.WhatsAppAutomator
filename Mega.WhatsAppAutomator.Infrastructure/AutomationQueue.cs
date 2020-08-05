@@ -39,7 +39,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Page = page;
             
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
-            StopBrowser = false;
+            //StopBrowser = false;
             try
             {
                 Task.Run(async () => await QueueExecution());
@@ -50,8 +50,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 throw;
             }
 
-            Task.Run(async () => await TimeToRestart());
-          
+            //Task.Run(async () => await TimeToRestart());
         }
 
         private static async Task<List<ToBeSent>> GetReturnListAsync()
@@ -136,7 +135,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
                 await Page.Browser.CloseAsync();
                 SaveChromeUserData();
-                return;
+                Environment.Exit(0);
             }
             catch (Exception e)
             {
@@ -151,16 +150,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             stp.Start();
             var groupsOfMessagesByNumber = await GetMessagesToBeSentByGroupAsync();
             stp.Stop();
-
-            Console.WriteLine(
-                $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of messages grouped by number  {ClientConfiguration.MessagesPerCycleNumberGroupingStrategy} messages, " +
-                $"got {groupsOfMessagesByNumber.Count} groups of messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n");
-
-
-            if (groupsOfMessagesByNumber.Any())
+            
+            if (groupsOfMessagesByNumber.Count > 0)
             {
+                Console.WriteLine(
+                    $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of messages grouped by number  {ClientConfiguration.MessagesPerCycleNumberGroupingStrategy} messages, " +
+                    $"got {groupsOfMessagesByNumber.Count} groups of messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n");
                 await SendGroupOfMessagesByNumber(Page, groupsOfMessagesByNumber);
+
+                return;
             }
+            
+            Console.WriteLine("Got no messages to sent, idling...");
+            Thread.Sleep(TimeSpan.FromSeconds(15));
         }
 
         private static async Task SendGroupOfMessagesByNumber(Page page, List<IGrouping<string,ToBeSent>> groupsOfMessagesByNumber)
@@ -181,7 +183,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 
                 Thread.Sleep(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages));
             }
-            TickSentMessages(groupsOfMessagesByNumber.SelectMany(x => x.ToList()).ToList());
+
+            var sentMessages = groupsOfMessagesByNumber.SelectMany(x => x.ToList()).ToList();
+            if (sentMessages.Any())
+            {
+                TickSentMessages(sentMessages);
+            }
             
             outerStopwatch.Stop();
             Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent group of messages in {outerStopwatch.Elapsed.TimeSpanToReport()}");
@@ -198,8 +205,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     .Take(ClientConfiguration.MessagesPerCycleNumberGroupingStrategy)
                     .ToListAsync();
             }
-            
-            Stores.MegaWhatsAppApi.BulkUpdate(items, x => x.CurrentlyProcessingOnAnotherInstance, true);
+
+            if (items.Any())
+            {
+                Stores.MegaWhatsAppApi.BulkUpdate(items, x => x.CurrentlyProcessingOnAnotherInstance, true);
+            }
             
             var nmberGrouping = items.GroupBy(x => x.Message.Number).ToList();
             return nmberGrouping;
@@ -406,28 +416,26 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
         }
 
-        private static async Task TimeToRestart()
-        {
-            var configuration = GetRestartConfiguration();
-            var watch = new Stopwatch();
-            watch.Start();
-            while (watch.Elapsed < configuration.TimeToRestart)
-            {
-            }
-            StopBrowser = true;
-            Thread.Sleep(configuration.WaitTime);
-            Environment.Exit(0);
-        }
+        // private static async Task TimeToRestart()
+        // {
+        //     var configuration = GetRestartConfiguration();
+        //     var watch = new Stopwatch();
+        //     watch.Start();
+        //     while (watch.Elapsed < configuration.TimeToRestart)
+        //     {
+        //     }
+        //     StopBrowser = true;
+        //     Thread.Sleep(configuration.WaitTime);
+        //     Environment.Exit(0);
+        // }
 
-        private static RestartConfiguration GetRestartConfiguration()
-        {
-            using var session = Stores.MegaWhatsAppApi.OpenSession();
-            return session.Query<Client>()
-                .Where(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1")
-                .Select(x => x.RestartConfiguration)
-                .FirstOrDefault();
-        }
-
-
+        // private static RestartConfiguration GetRestartConfiguration()
+        // {
+        //     using var session = Stores.MegaWhatsAppApi.OpenSession();
+        //     return session.Query<Client>()
+        //         .Where(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1")
+        //         .Select(x => x.RestartConfiguration)
+        //         .FirstOrDefault();
+        // }
     }
 }
