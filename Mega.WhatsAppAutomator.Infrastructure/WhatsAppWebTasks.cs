@@ -139,17 +139,17 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task SendMessage(Page page, string messageText, Random random, bool sendAfterTyping = true)
         {
-            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(
-                WhatsAppWebMetadata.ChatContainer,
-                messageText,
-                delayInMs: Humanizer.InsaneMode ? 0 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay),
-                useParser: true);
-            if (sendAfterTyping)
-            {
-                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            }
-        }
+			await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
+			await page.TypeOnElementAsync(
+				WhatsAppWebMetadata.ChatContainer,
+				RandomSpaceBetweenWords(messageText),
+				delayInMs: Humanizer.InsaneMode ? 0 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay),
+				useParser: true);
+			if (sendAfterTyping)
+			{
+				await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+			}
+		}
         
         private static async Task SendGroupOfMessages(Page page, List<string> texts, Random random)
         {
@@ -225,5 +225,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             });
             await session.SaveChangesAsync();
         }
+
+        private static string RandomSpaceBetweenWords(string messageText) 
+        {
+            var space = new[] { " ", "  ", " ", " ", " ", " "};
+            var teste = messageText.Split(' ');
+            var resultado = string.Empty;
+            foreach (var t in teste)
+            {
+                resultado += t + space.Random();
+            }
+            return resultado;
+        }
+
+      
     }
 }

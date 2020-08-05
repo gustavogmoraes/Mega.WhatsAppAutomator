@@ -104,7 +104,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static void StartQueue(Page page)
         {
+
             AutomationQueue.StartQueue(page);
+
         }
 
 		private static async Task<bool> CheckItsLoggedIn(Page page)

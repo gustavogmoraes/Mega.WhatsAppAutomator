@@ -39,7 +39,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Page = page;
             
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
-
+            StopBrowser = false;
             try
             {
                 Task.Run(async () => await QueueExecution());
@@ -49,7 +49,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 Console.WriteLine(e);
                 throw;
             }
-            
+
+            Task.Run(async () => await TimeToRestart());
           
         }
 
@@ -135,7 +136,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
                 await Page.Browser.CloseAsync();
                 SaveChromeUserData();
-                Environment.Exit(0);
+                return;
             }
             catch (Exception e)
             {
@@ -405,6 +406,28 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
         }
 
-        
+        private static async Task TimeToRestart()
+        {
+            var configuration = GetRestartConfiguration();
+            var watch = new Stopwatch();
+            watch.Start();
+            while (watch.Elapsed < configuration.TimeToRestart)
+            {
+            }
+            StopBrowser = true;
+            Thread.Sleep(configuration.WaitTime);
+            Environment.Exit(0);
+        }
+
+        private static RestartConfiguration GetRestartConfiguration()
+        {
+            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            return session.Query<Client>()
+                .Where(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1")
+                .Select(x => x.RestartConfiguration)
+                .FirstOrDefault();
+        }
+
+
     }
 }
