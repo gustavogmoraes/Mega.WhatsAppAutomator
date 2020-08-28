@@ -10,6 +10,7 @@ using Mega.WhatsAppAutomator.Infrastructure.TextNow;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp.Contrib.Extensions;
 using PuppeteerSharp.Mobile;
+using System.Linq.Expressions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -78,20 +79,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task WaitForSetup(Page page, TimeSpan timeout)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            
-            while (!await CheckItsLoggedIn(page))
-            {
-                if (stopwatch.Elapsed > timeout)
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+
+                while (!await CheckItsLoggedIn(page))
                 {
-                    throw new TimeoutException("Setup has timed out");
+                    if (stopwatch.Elapsed > timeout)
+                    {
+                        throw new TimeoutException("Setup has timed out");
+                    }
+
+                    Thread.Sleep(500);
                 }
-
-                Thread.Sleep(500);
-            }
         }
-
 		// private static async Task StartListeningToMessagesAsync(Page page)
 		// {
         // 	await page.ClickOnElementAsync(WhatsAppWebMetadata.Unread);

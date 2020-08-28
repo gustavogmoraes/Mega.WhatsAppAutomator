@@ -7,7 +7,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
     {
         public static void StoreError(UntreatedError error)
         {
-            using(var session = Stores.MegaWhatsAppAutomator.OpenSession())
+            using(var session = Stores.MegaWhatsAppApi.OpenSession())
             {
                 session.Store(error);
                 session.SaveChanges();

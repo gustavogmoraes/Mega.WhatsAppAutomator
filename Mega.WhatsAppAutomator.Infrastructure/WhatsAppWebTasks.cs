@@ -197,7 +197,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 await OpenChat(page, number);
 				await page.WaitForSelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber, new WaitForSelectorOptions { Visible = true, Timeout = Convert.ToInt32(TimeSpan.FromSeconds(2).TotalMilliseconds) });
 
-				return true;
+				return false;
 			}
 			catch (Exception)
 			{
