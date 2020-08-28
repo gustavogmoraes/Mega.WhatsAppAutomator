@@ -39,19 +39,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 			await SendHumanizedMessage(page, message.Text, messageNumber);
         }
 
-        public static async Task SendMessageGroupedByNumber(Page page, string number, List<string> listOfTexts)
+        public static async Task<bool> SendMessageGroupedByNumber(Page page, string number, List<string> listOfTexts)
         {
             TreatStrangeNumbers(ref number);
             
             await OpenChat(page, number);
             
+            Console.WriteLine("Checking if number exists");
             if (await CheckIfNumberExists(page))
             {
                 await DismissErrorAndStoreNotDelivereds(page, number, listOfTexts);
-                return;
+                Console.WriteLine($"Number {number} does not exist on WhatsApp, storing as not delivered");
+                return false;
             }
 
             await SendHumanizedMessageByNumberGroups(page, number, listOfTexts);
+            return true;
         }
         
         private static async Task SendHumanizedMessageByNumberGroups(Page page, string number, List<string> texts)

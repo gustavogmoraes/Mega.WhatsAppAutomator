@@ -21,6 +21,8 @@ using System.Security.AccessControl;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Raven.Client.Documents.Linq;
 using System.Text.RegularExpressions;
+using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
+using Extensions = Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -134,13 +136,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 }
 
                 await Page.Browser.CloseAsync();
+                Thread.Sleep(TimeSpan.FromSeconds(3));
                 SaveChromeUserData();
                 Environment.Exit(0);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                throw;
+                //throw;
             }
         }
 
@@ -161,7 +164,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 return;
             }
             
-            Console.WriteLine("Got no messages to sent, idling...");
+            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} Got no messages to sent, idling...");
             Thread.Sleep(TimeSpan.FromSeconds(15));
         }
 
@@ -169,6 +172,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             var outerStopwatch = new Stopwatch();
             outerStopwatch.Start();
+            bool wasSent = false;
+            
             foreach (var group in groupsOfMessagesByNumber)
             {
                 var number = group.Key;
@@ -177,17 +182,21 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Writing {texts.Count} messages to number {number}");
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
-                await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
+                
+                wasSent = await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
                 stopwatch.Stop();
                 Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Sent {texts.Count} messages to number {number}");
                 
                 Thread.Sleep(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages));
             }
-
-            var sentMessages = groupsOfMessagesByNumber.SelectMany(x => x.ToList()).ToList();
-            if (sentMessages.Any())
+            
+            var intendedMessages = groupsOfMessagesByNumber.SelectMany(x => x.ToList()).ToList();
+            if (intendedMessages.Any())
             {
-                TickSentMessages(sentMessages);
+                if (wasSent)
+                {
+                    TickSentMessages(intendedMessages);
+                }
             }
             
             outerStopwatch.Stop();
@@ -215,20 +224,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return nmberGrouping;
         }
 
+        private static string GotXMessagesToBeSent() =>
+            $"started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +
+            "got {result}.Count messages to be sent, request time: {totalTime}.Count";
+
         private static async Task SendMessagesNoStrategy()
         {
-            var stp = new Stopwatch();
-            stp.Start();
-            var toBeSentMessages = await GetMessagesToBeSentAsync();
-            stp.Stop();
-
-            var messagesIds = string.Join(", ", toBeSentMessages.Select(x => x.Id));
-
-            Console.WriteLine(
-                $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +
-                $"got {toBeSentMessages.Count} messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n" +
-                $"Messages IDs = {messagesIds}");
-
+            var toBeSentMessages = await Extensions.ExecuteWithLogsAsync(GetMessagesToBeSentAsync);
+            
             if (toBeSentMessages.Any())
             {
                 await SendListOfMessages(Page, toBeSentMessages);
@@ -239,30 +242,59 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             var browserFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BrowserFiles");
             var userDataDirPath = Path.Combine(browserFilesDir, "user-data-dir");
-            
-            var instanceId = Environment.GetEnvironmentVariable("INSTANCE_ID");
-            var zipPath = Path.Combine(browserFilesDir, instanceId + ".zip");
-            
-            ZipFile.CreateFromDirectory(userDataDirPath, zipPath);
 
-            using var session = Stores.MegaWhatsAppApi.OpenSession();
-            var client = session.Query<Client>().FirstOrDefault(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1");
-            
-            Console.WriteLine("Saving user data file to database");
-            using (var stream = File.Open(zipPath, FileMode.Open))
+            var instanceId = EnvironmentConfiguration.InstanceId;
+            var zipPath = Path.Combine(browserFilesDir, instanceId + ".zip");
+
+            if (File.Exists(zipPath))
             {
-                session.Advanced.Attachments.Store(client, instanceId + ".zip", stream);
-                session.SaveChanges();
+                File.Delete(zipPath);
             }
+
+            new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory).GetPermission();
             
+            new DirectoryInfo(Path.Combine(PupeteerMetadata.UserDataDir, "Default")).DeleteAllBut(PupeteerMetadata.UserDataDirDirectoriesAndFilesExceptionsToNotDelete);
+            new DirectoryInfo(PupeteerMetadata.UserDataDir).DeleteAllBut(new[] { Path.Combine(PupeteerMetadata.UserDataDir, "Default") });
+            
+            Console.WriteLine("Compressing file");
+            ZipFile.CreateFromDirectory(userDataDirPath, zipPath, CompressionLevel.Optimal, false);
+            
+            Thread.Sleep(TimeSpan.FromSeconds(5));
             var osPlat = DevOpsHelper.GetOsPlatform();
             if (osPlat != OSPlatform.Windows)
             {
                 DevOpsHelper.Bash($"chmod 755 {browserFilesDir}");
             }
+            else
+            {
+                new DirectoryInfo(browserFilesDir).GetPermission();
+            }
             
-            // For some reason gives me Permission denied
-            //File.Delete(browserFilesDir);
+            Console.WriteLine("Saving user data file to database");
+            
+            using (var session = Stores.MegaWhatsAppApi.OpenSession())
+            using (var stream = File.Open(zipPath, FileMode.Open))
+            {
+                var client = session.Query<Client>().FirstOrDefault(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1");
+                session.Advanced.Attachments.Store(client, instanceId + ".zip", stream);
+                session.SaveChanges();
+            }
+            
+            Thread.Sleep(TimeSpan.FromSeconds(5));
+            Console.WriteLine("Saved");
+            
+            osPlat = DevOpsHelper.GetOsPlatform();
+            if (osPlat != OSPlatform.Windows)
+            {
+                DevOpsHelper.Bash($"chmod 755 {browserFilesDir}");
+            }
+            else
+            {
+                new DirectoryInfo(browserFilesDir).GetPermission();
+            }
+            
+            Console.WriteLine("Now trying to delete everything");
+            Directory.Delete(browserFilesDir, true);
         }
 
         private static async Task SendListOfMessages(Page page, List<ToBeSent> toBeSentMessages)
@@ -314,55 +346,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static Func<ToBeSent, Sent> SentMessageSelector =>x => new Sent
         {
             Message = x.Message,
-            EntryTime = x.EntryTime, // It's already on Brazilia DateTime
+            EntryTime = x.EntryTime,
             TimeSent = DateTime.UtcNow.ToBraziliaDateTime()
-       };
-
-        //private static List<ByNumberMessages> GetListOfByNumberMessages()
-        //{
-        //    List<ByNumberMessages> listOfByNumberMessages;
-        //    using (var session = Stores.MegaWhatsAppApi.OpenSession())
-        //    {
-        //        var byNumberGrouping = session.Query<ToBeSent>()
-        //            .Take(1000)
-        //            .GroupBy(toBeSent => toBeSent.Message.Number)
-        //            .Select(x => new
-        //            {
-        //                Number = x.Key,
-        //                TextCount = x.Count()
-        //            })
-        //            .ToList();
-
-        //        listOfByNumberMessages = new List<ByNumberMessages>();
-        //        foreach (var group in byNumberGrouping)
-        //        {
-        //            ProcessAndAddOnListOfMesssagesByNumber(session, @group.Number, listOfByNumberMessages);
-        //        }
-        //    }
-
-        //    return listOfByNumberMessages;
-        //}
-
-        //private static void ProcessAndAddOnListOfMesssagesByNumber(IDocumentSession session, string number, List<ByNumberMessages> listOfByNumberMessages)
-        //{
-        //    var listOfToBeSents = QueryToBeSentByThisNumber(number);
-
-        //    var texts = new List<string>();
-        //    var ids = new List<string>();
-
-        //    foreach (var toBeSent in listOfToBeSents)
-        //    {
-        //        ids.Add(toBeSent.Id);
-        //        texts.Add(toBeSent.Message.Text);
-        //    }
-
-        //    listOfByNumberMessages.Add(new ByNumberMessages
-        //    {
-        //        Number = number,
-        //        IdsToDelete = ids.Distinct().ToList(),
-        //        Texts = texts.Distinct().ToList()
-        //    });
-        //}
+        };
 
         private static List<ToBeSent> QueryToBeSentByThisNumber(string number)
         {

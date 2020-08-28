@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.AccessControl;
@@ -16,8 +17,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
     public static class PupeteerMetadata
     {
         public static string CustomUserAgentForHeadless => @"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36";
-        
-        public static string[] CustomsArgsForHeadless => new []
+
+        private static string[] CustomsArgsForHeadless => new []
         {
             // "--proxy-server='direct://'",
             // "--proxy-bypass-list=*",
@@ -39,15 +40,35 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             "--disable-setuid-sandbox",
             "--no-sandbox"
         };
-       
-        // "--window-position=0,0",
-        // "--ignore-certifcate-errors",
-        // "--ignore-certifcate-errors-spki-list",
-        
-        private static string UserDataDir
+
+        private static readonly string[] UserDataExceptions =
+        {
+            @"Default/Web Data", 
+            @"Default/Login Data",
+            @"Default/Last Session",
+            @"Default/Cookies",
+            @"Default/Cookies-journal",
+            @"Default/Login Data-journal",
+            @"Default/Web Data-journal",
+            @"Default/Cache",
+            @"Default/Code Cache",
+            @"Default/Local Storage"
+        };
+
+        public static IList<string> UserDataDirDirectoriesAndFilesExceptionsToNotDelete =>
+            UserDataExceptions.Select(x => Path.Combine(UserDataDir, x)).ToList();
+
+        private static bool _didAlreadyProcessUserDataDir;
+        private static string _processedUserDataDir;
+        public static string UserDataDir
         {
             get
             {
+                if (_didAlreadyProcessUserDataDir)
+                {
+                    return _processedUserDataDir;
+                }
+                
                 var browserFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BrowserFiles");
                 var userDataDirPath = Path.Combine(browserFilesDir, "user-data-dir");
                 if(!Directory.Exists(browserFilesDir))
@@ -58,10 +79,20 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                     {
                         DevOpsHelper.Bash($"chmod 755 {browserFilesDir}");
                     }
+                    else
+                    {
+                        new DirectoryInfo(browserFilesDir).GetPermission();
+                    }
                 }
 
-                var instanceId = Environment.GetEnvironmentVariable("INSTANCE_ID");
-                
+                if (Directory.Exists(userDataDirPath))
+                {
+                    _processedUserDataDir = userDataDirPath;
+                    _didAlreadyProcessUserDataDir = true;
+                    return userDataDirPath;
+                }
+
+                var instanceId = EnvironmentConfiguration.InstanceId;
                 var zipPath = userDataDirPath + ".zip";
                 
                 Console.WriteLine("Trying to download user data file");
@@ -77,11 +108,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 
                     File.Delete(zipPath);
 
+                    _processedUserDataDir = userDataDirPath;
+                    _didAlreadyProcessUserDataDir = true;
                     return userDataDirPath;
                 }
                 
                 Console.WriteLine("Did not find user data file, creating new");
 
+                _processedUserDataDir = userDataDirPath;
+                _didAlreadyProcessUserDataDir = true;
                 return userDataDirPath;
             }
         }
@@ -91,7 +126,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         private static string PupeteerBasePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PupeteerFiles");
         private static string ExecutablePath => SolveExecutablePath();
         public static bool AmIRunningInDocker => Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
-        public static bool Headless => AmIRunningInDocker || Environment.GetEnvironmentVariable("USE_HEADLESS_CHROMIUM") == "true";
+        public static bool Headless => AmIRunningInDocker || EnvironmentConfiguration.UseHeadlessChromium;
 
         public static LaunchOptions GetLaunchOptions()
         {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Mega.WhatsAppAutomator.Api.ApiUtils;
@@ -15,8 +16,9 @@ namespace Mega.WhatsAppAutomator.Api
     {
         public static void Main(string[] args)
         {
-            // Sets running configs based on environment variables
-            SetRunningConfiguration();
+            // Sets running configs based on environment variables for Docker or development IDE
+            // and based on args for dll running via "dotnet" command on CLI
+            SetRunningConfiguration(args);
             
             var apiHost = CreateHostBuilder(args).Build();
 
@@ -43,18 +45,32 @@ namespace Mega.WhatsAppAutomator.Api
                 });
         }
 
-        public static void SetRunningConfiguration()
+        private static void SetRunningConfiguration(IReadOnlyList<string> args)
         {
+            if (args.Any())
+            {
+                EnvironmentConfiguration.DatabaseName = args[0] ?? throw new Exception("ENV DATABASE_NAME not set");
+                EnvironmentConfiguration.DatabaseUrl = args[1] ?? throw new Exception("ENV DATABASE_URL not set");
+                EnvironmentConfiguration.DatabaseNeedsCertificate = Convert.ToBoolean(args[2] ?? throw new Exception("DATABASE_NEEDS_CERT not set"));
+                EnvironmentConfiguration.IsRunningOnHeroku = Convert.ToBoolean(args[3] ?? throw new Exception("ENV IS_RUNNING_ON_HEROKU not set"));
+                EnvironmentConfiguration.LocalAspNetWebApiPort = Convert.ToInt32(args[4] ?? throw new Exception("LOCAL_API_PORT not set"));
+                EnvironmentConfiguration.UseHeadlessChromium = Convert.ToBoolean(args[5]);
+                EnvironmentConfiguration.InstanceId = args[6];
+                
+                return;
+            }
+            
             EnvironmentConfiguration.DatabaseName = Environment.GetEnvironmentVariable("DATABASE_NAME")
-                ?? throw new Exception("ENV DATABASE_NAME not set");
+                                                    ?? throw new Exception("ENV DATABASE_NAME not set");
             EnvironmentConfiguration.DatabaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
-                ?? throw new Exception("ENV DATABASE_URL not set");
+                                                   ?? throw new Exception("ENV DATABASE_URL not set");
             EnvironmentConfiguration.DatabaseNeedsCertificate = (bool?)Convert.ToBoolean(Environment.GetEnvironmentVariable("DATABASE_NEEDS_CERT"))
-                ?? throw new Exception("DATABASE_NEEDS_CERT not set");
+                                                                ?? throw new Exception("DATABASE_NEEDS_CERT not set");
             EnvironmentConfiguration.IsRunningOnHeroku = (bool?)Convert.ToBoolean(Environment.GetEnvironmentVariable("IS_RUNNING_ON_HEROKU"))
-                ?? throw new Exception("ENV IS_RUNNING_ON_HEROKU not set");
-            EnvironmentConfiguration.LocalAspNetWebApiPort = (int?)Convert.ToInt32(Environment.GetEnvironmentVariable("LOCAL_API_PORT"))
-                ?? throw new Exception("LOCAL_API_PORT not set");
+                                                         ?? throw new Exception("ENV IS_RUNNING_ON_HEROKU not set");
+            EnvironmentConfiguration.LocalAspNetWebApiPort = Convert.ToInt32(Environment.GetEnvironmentVariable("LOCAL_API_PORT"));
+            EnvironmentConfiguration.UseHeadlessChromium = Convert.ToBoolean(Environment.GetEnvironmentVariable("USE_HEADLESS_CHROMIUM"));
+            EnvironmentConfiguration.InstanceId = Environment.GetEnvironmentVariable("INSTANCE_ID");
         }
     }
 }

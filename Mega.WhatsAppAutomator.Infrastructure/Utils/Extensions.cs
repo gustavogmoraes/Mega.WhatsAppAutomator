@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
@@ -7,9 +8,15 @@ using System.Linq.Expressions;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
+using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Domain.Interfaces;
+using Mega.WhatsAppAutomator.Domain.Objects;
+using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Raven.Client.Documents;
@@ -214,7 +221,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 
 			return Exp.Member;
 		}
-		
 
 		public static Dictionary<string, TValue> ToDictionary<TValue>(this object obj)
 		{
@@ -222,6 +228,99 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 			var dictionary = JsonConvert.DeserializeObject<Dictionary<string, TValue>>(json);
 
 			return dictionary;
+		}
+
+		public static async Task<T> ExecuteWithLogsAsync<T>(Func<Task<T>> function, string log = null, Func<string> delegated = null)
+		{
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+
+			var result = await function.Invoke();
+			stopwatch.Stop();
+			
+			Console.WriteLine(
+				$"At {DateTime.UtcNow.ToBraziliaDateTime()} {log ?? string.Empty}"
+				.Replace("{totalTime}", stopwatch.Elapsed.TimeSpanToReport()));
+			
+			return result;
+		}
+
+		public static void GetPermission(this DirectoryInfo baseDirectoryInfo)
+		{
+			if (DevOpsHelper.GetOsPlatform() == OSPlatform.Windows)
+			{
+				// Remove read only
+				baseDirectoryInfo.Attributes &= ~FileAttributes.ReadOnly;
+				
+				// Get permission
+				SetFullControlPermissionsToEveryone(baseDirectoryInfo.FullName);
+				return;
+			}
+			
+			DevOpsHelper.Bash($"chmod 755 {baseDirectoryInfo.FullName}");
+		}
+		
+		private static void SetFullControlPermissionsToEveryone(string path)
+		{
+			const FileSystemRights rights = FileSystemRights.FullControl;
+
+			var allUsers = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+
+			// Add Access Rule to the actual directory itself
+			var accessRule = new FileSystemAccessRule(
+				allUsers,
+				rights,
+				InheritanceFlags.None,
+				PropagationFlags.NoPropagateInherit,
+				AccessControlType.Allow);
+
+			var info = new DirectoryInfo(path);
+			var security = info.GetAccessControl(AccessControlSections.Access);
+
+			bool result;
+			security.ModifyAccessRule(AccessControlModification.Set, accessRule, out result);
+
+			if (!result)
+			{
+				throw new InvalidOperationException("Failed to give full-control permission to all users for path " + path);
+			}
+
+			// add inheritance
+			var inheritedAccessRule = new FileSystemAccessRule(
+				allUsers,
+				rights,
+				InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+				PropagationFlags.InheritOnly,
+				AccessControlType.Allow);
+
+			bool inheritedResult;
+			security.ModifyAccessRule(AccessControlModification.Add, inheritedAccessRule, out inheritedResult);
+
+			if (!inheritedResult)
+			{
+				throw new InvalidOperationException("Failed to give full-control permission inheritance to all users for " + path);
+			}
+
+			info.SetAccessControl(security);
+		}
+
+		public static void DeleteAllBut(this DirectoryInfo baseDirectoryInfo, IList<string> exceptions)
+		{
+			foreach (var fileInfo in baseDirectoryInfo.GetFiles())
+			{
+				if (!exceptions.Contains(fileInfo.FullName))
+				{
+					fileInfo.Delete();
+				}
+			}
+			
+			foreach (var directoryInfo in baseDirectoryInfo.GetDirectories())
+			{
+				if (!exceptions.Contains(directoryInfo.FullName))
+				{
+					directoryInfo.Delete(recursive: true);
+				}
+			}
 		}
 	}
 }

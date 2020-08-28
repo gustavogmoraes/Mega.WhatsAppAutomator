@@ -53,10 +53,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             // followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
             if (!runningInDocker)
             {
+                Console.WriteLine("Not running on Docker, checking and downloading browser/dependencies");
                 await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
             }
             
-            Console.WriteLine($"Trying to launch");
+            Console.WriteLine("Trying to launch");
             var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions());
 
             var page = await browser.NewPageAsync();
@@ -73,8 +74,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
 
             StartQueue(page);
-            //await StartListeningToMessagesAsync();
-            //StartListeningToMessagesAsync(page);
         }
 
         private static async Task WaitForSetup(Page page, TimeSpan timeout)
@@ -102,14 +101,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 		// 	});
         //}
 
-        private static void StartQueue(Page page)
-        {
+        private static void StartQueue(Page page) => AutomationQueue.StartQueue(page);
 
-            AutomationQueue.StartQueue(page);
-
-        }
-
-		private static async Task<bool> CheckItsLoggedIn(Page page)
+        private static async Task<bool> CheckItsLoggedIn(Page page)
 		{
 			try
 			{

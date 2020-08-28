@@ -12,5 +12,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         public static bool IsRunningOnHeroku { get; set; }
 
         public static int LocalAspNetWebApiPort { get; set; }
+        public static string InstanceId { get; set; }    
+        public static bool UseHeadlessChromium { get; set; }
     }
 }
