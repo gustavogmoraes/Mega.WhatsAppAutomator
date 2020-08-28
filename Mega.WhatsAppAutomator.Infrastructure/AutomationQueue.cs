@@ -175,6 +175,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             foreach (var group in groupsOfMessagesByNumber)
             {
+
+               while (!(await WhatsAppWebTasks.CheckPageIntegrity(page)))
+                {
+                    Console.WriteLine("Fudeu BH.");
+                    await page.ReloadAsync();
+                    Thread.Sleep(2000);
+                }
+
                 var number = group.Key;
                 var texts = group.Select(x => x.Message.Text).ToList();
                 
