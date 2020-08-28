@@ -71,14 +71,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Humanizer.UseHumanizer && 
             !GetCollaboratorNumbers().Contains(number);
 
-        public static async Task DismissErrorAndStoreNotDelivereds(Page page, string number, List<ToBeSent> intendeds)
+        public static async Task DismissErrorAndStoreNotDelivereds(Page page, List<ToBeSent> intendeds)
         {
             await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
             foreach (var intend in intendeds)
             {
                 await StoreNotDeliveredMessage(intend.Message);
             }
+
+            await DeleteNotSents(intendeds);
         }
+
+        private static async Task DeleteNotSents(List<ToBeSent> intendeds)
+        {
+            
+        }
+        
         private static void TreatStrangeNumbers(ref string number)
         {
             if(number == "+551291828152")
@@ -195,13 +203,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 			try
             {
                 await OpenChat(page, number);
-				await page.WaitForSelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber, new WaitForSelectorOptions { Visible = true, Timeout = Convert.ToInt32(TimeSpan.FromSeconds(2).TotalMilliseconds) });
+				await page.WaitForSelectorAsync(
+                    WhatsAppWebMetadata.AcceptInvalidNumber,
+                    new WaitForSelectorOptions
+                    {
+                        Visible = true, 
+                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)
+                    });
 
 				return false;
 			}
 			catch (Exception)
 			{
-				return false;
+				return true;
 			}
 		}
 

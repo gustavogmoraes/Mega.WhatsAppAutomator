@@ -186,21 +186,35 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
                 if (!numberExists)
                 {
-                    await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, number, group.ToList());
+                    await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, group.ToList());
+                    RemoveNotSentMessages(group.ToList());
                     Console.WriteLine($"Number {number} does not exist on WhatsApp, storing as not delivered");
-                    
-                    continue;
                 }
-
-                await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
+                else
+                {
+                    await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
+                    TickSentMessages(group.ToList());
+                    
+                    Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Sent {texts.Count} messages to number {number}");
+                }
+                
                 stopwatch.Stop();
-                Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Sent {texts.Count} messages to number {number}");
-
                 Thread.Sleep(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages));
             }
             
             outerStopwatch.Stop();
             Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent group of messages in {outerStopwatch.Elapsed.TimeSpanToReport()}");
+        }
+
+        private static void RemoveNotSentMessages(List<ToBeSent> messages)
+        {
+            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            foreach (var x in messages)
+            {
+                session.Delete(x.Id);
+            }
+
+            session.SaveChanges();
         }
 
         private static async Task<List<IGrouping<string, ToBeSent>>> GetMessagesToBeSentByGroupAsync()
