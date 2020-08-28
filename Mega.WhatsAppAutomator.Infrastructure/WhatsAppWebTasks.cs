@@ -29,7 +29,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             await OpenChat(page, messageNumber);
 
-            if (await CheckIfNumberExists(page))
+            if (!await CheckIfNumberExists(page, message.Number))
 			{
                 await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
 				await StoreNotDeliveredMessage(message);
@@ -42,16 +42,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public static async Task<bool> SendMessageGroupedByNumber(Page page, string number, List<string> listOfTexts)
         {
             TreatStrangeNumbers(ref number);
-            
-            await OpenChat(page, number);
-            
-            Console.WriteLine("Checking if number exists");
-            if (await CheckIfNumberExists(page))
-            {
-                await DismissErrorAndStoreNotDelivereds(page, number, listOfTexts);
-                Console.WriteLine($"Number {number} does not exist on WhatsApp, storing as not delivered");
-                return false;
-            }
 
             await SendHumanizedMessageByNumberGroups(page, number, listOfTexts);
             return true;
@@ -81,16 +71,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Humanizer.UseHumanizer && 
             !GetCollaboratorNumbers().Contains(number);
 
-        private static async Task DismissErrorAndStoreNotDelivereds(Page page, string number, List<string> listOfTexts)
+        public static async Task DismissErrorAndStoreNotDelivereds(Page page, string number, List<ToBeSent> intendeds)
         {
             await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
-            foreach (var text in listOfTexts)
+            foreach (var intend in intendeds)
             {
-                await StoreNotDeliveredMessage(new Message
-                {
-                    Number = number,
-                    Text = text
-                });
+                await StoreNotDeliveredMessage(intend.Message);
             }
         }
         private static void TreatStrangeNumbers(ref string number)
@@ -204,10 +190,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return  Humanizer.CollaboratorsContacts;
         }
 
-		private static async Task<bool> CheckIfNumberExists(Page page)
+		public static async Task<bool> CheckIfNumberExists(Page page, string number)
 		{
 			try
-			{
+            {
+                await OpenChat(page, number);
 				await page.WaitForSelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber, new WaitForSelectorOptions { Visible = true, Timeout = Convert.ToInt32(TimeSpan.FromSeconds(2).TotalMilliseconds) });
 
 				return true;

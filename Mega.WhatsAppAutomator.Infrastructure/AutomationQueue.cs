@@ -172,8 +172,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             var outerStopwatch = new Stopwatch();
             outerStopwatch.Start();
-            bool wasSent = false;
-            
+
             foreach (var group in groupsOfMessagesByNumber)
             {
                 var number = group.Key;
@@ -183,20 +182,21 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
                 
-                wasSent = await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
+                Console.WriteLine("Checking if number exists");
+                var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
+                if (!numberExists)
+                {
+                    await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, number, group.ToList());
+                    Console.WriteLine($"Number {number} does not exist on WhatsApp, storing as not delivered");
+                    
+                    continue;
+                }
+
+                await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
                 stopwatch.Stop();
                 Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Sent {texts.Count} messages to number {number}");
-                
+
                 Thread.Sleep(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages));
-            }
-            
-            var intendedMessages = groupsOfMessagesByNumber.SelectMany(x => x.ToList()).ToList();
-            if (intendedMessages.Any())
-            {
-                if (wasSent)
-                {
-                    TickSentMessages(intendedMessages);
-                }
             }
             
             outerStopwatch.Stop();
