@@ -218,8 +218,26 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 				return true;
 			}
 		}
+        public static async Task<bool> CheckPageIntegrity(Page page)
+        {
+            try
+            { 
+                await page.WaitForSelectorAsync(
+                    WhatsAppWebMetadata.ChatContainer,
+                    new WaitForSelectorOptions
+                    {
+                        Visible = true,
+                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)
+                    });
 
-		private static async Task StoreNotDeliveredMessage(Message erroMessage)
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        private static async Task StoreNotDeliveredMessage(Message erroMessage)
         {
             using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
             await session.StoreAsync(new NotDelivered
