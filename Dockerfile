@@ -14,6 +14,6 @@ EXPOSE 5000
 EXPOSE 5001
 
 WORKDIR /app
-COPY Output/* /app/
+COPY Output/ /app/
 
 ENTRYPOINT ["dotnet", "Mega.WhatsAppAutomator.Api.dll"]

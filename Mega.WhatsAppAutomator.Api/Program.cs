@@ -24,7 +24,7 @@ namespace Mega.WhatsAppAutomator.Api
 
             // Creates automation
             _ = AutomationStartup.Start();
-            
+
             apiHost.Run();
         }
 

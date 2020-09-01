@@ -1,6 +1,10 @@
 using System;
+using System.Diagnostics;
 using Mega.WhatsAppAutomator.Api.ApiUtils;
 using Mega.WhatsAppAutomator.Api.Filters;
+using Mega.WhatsAppAutomator.Infrastructure;
+using Mega.WhatsAppAutomator.Infrastructure.DevOps;
+using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -31,7 +35,7 @@ namespace Mega.WhatsAppAutomator.Api
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime lifetime)
         {
             if (!EnvironmentConfiguration.IsRunningOnHeroku)
             {
@@ -56,6 +60,16 @@ namespace Mega.WhatsAppAutomator.Api
             {
                 endpoints.MapControllers();
             });
+            
+            lifetime.ApplicationStopping.Register(OnAppStopping);
+        }
+
+        private void OnAppStopping()
+        {
+            if (!PupeteerMetadata.AmIRunningInDocker)
+            {
+                AutomationStartup.BrowserRef.CloseAsync().Wait();
+            }
         }
     }
 }

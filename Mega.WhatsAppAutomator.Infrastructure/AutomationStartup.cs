@@ -17,6 +17,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
     public static class AutomationStartup
     {
         public static bool SmsReady { get; set; }
+        
+        public static Browser BrowserRef { get; set; }
 
         public static async Task StartSms()
         {
@@ -34,12 +36,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Console.WriteLine($"Launched, now going to page");
 
             StartQueue(page);
-
-            //await NavigateToTextNowPage(page);
-
-            //await Portabilidade.Start(browser);
-            //SmsReady = true;
-
         }
         public static void ExitBrowser()
         {
@@ -60,6 +56,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             Console.WriteLine("Trying to launch");
             var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions());
+
+            BrowserRef = browser;
 
             var page = await browser.NewPageAsync();
             Console.WriteLine($"Launched, now going to page");
