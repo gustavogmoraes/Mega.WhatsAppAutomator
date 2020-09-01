@@ -41,8 +41,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         public static async Task<bool> SendMessageGroupedByNumber(Page page, string number, List<string> listOfTexts)
         {
-            TreatStrangeNumbers(ref number);
-
             await SendHumanizedMessageByNumberGroups(page, number, listOfTexts);
             return true;
         }
@@ -84,10 +82,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task DeleteNotSents(List<ToBeSent> intendeds)
         {
-            
+            using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
+            foreach (var x in intendeds)
+            {
+                session.Delete(x.Id);
+            }
+
+            await session.SaveChangesAsync();
         }
         
-        private static void TreatStrangeNumbers(ref string number)
+        public static void TreatStrangeNumbers(ref string number)
         {
             if(number == "+551291828152")
             {
@@ -223,11 +227,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             try
             { 
                 await page.WaitForSelectorAsync(
-                    WhatsAppWebMetadata.ChatContainer,
+                    WhatsAppWebMetadata.MainPanel,
                     new WaitForSelectorOptions
                     {
                         Visible = true,
-                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)
+                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(5).TotalMilliseconds)
                     });
 
                 return true;

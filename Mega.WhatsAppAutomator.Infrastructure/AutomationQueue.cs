@@ -175,33 +175,36 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             foreach (var group in groupsOfMessagesByNumber)
             {
-
-               while (!(await WhatsAppWebTasks.CheckPageIntegrity(page)))
+                while (!(await WhatsAppWebTasks.CheckPageIntegrity(page)))
                 {
-                    Console.WriteLine("Fudeu BH.");
+                    Console.WriteLine("Page integrity compromised, reloading...");
                     await page.ReloadAsync();
-                    Thread.Sleep(2000);
+                    
+                    Thread.Sleep(TimeSpan.FromSeconds(5));
                 }
 
                 var number = group.Key;
                 var texts = group.Select(x => x.Message.Text).ToList();
+                var messages = group.ToList();
                 
                 Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Writing {texts.Count} messages to number {number}");
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
                 
+                WhatsAppWebTasks.TreatStrangeNumbers(ref number);
+                
                 Console.WriteLine("Checking if number exists");
                 var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
                 if (!numberExists)
                 {
-                    await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, group.ToList());
-                    RemoveNotSentMessages(group.ToList());
+                    await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, messages);
+                    RemoveNotSentMessages(messages);
                     Console.WriteLine($"Number {number} does not exist on WhatsApp, storing as not delivered");
                 }
                 else
                 {
                     await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
-                    TickSentMessages(group.ToList());
+                    TickSentMessages(messages);
                     
                     Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Sent {texts.Count} messages to number {number}");
                 }
