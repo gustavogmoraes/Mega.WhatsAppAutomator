@@ -1,0 +1,19 @@
+DATABASE_NAME="Mega.WhatsAppApi" \
+DATABASE_URL="https://a.free.gsoftware.ravendb.cloud/" \
+DATABASE_NEEDS_CERTIFICATE="true" \
+LOCAL_API_PORT="5001" \
+IS_RUNNING_ON_HEROKU="false" \
+USE_HEADLESS_CHROMIUM="true" \
+CLIENT_ID="dae2844a-25dd-4809-9e56-a49218ac86e6"\
+INSTANCE_ID="Bot2"
+
+
+
+ENV DATABASE_NAME="Mega.WhatsAppApi" \
+DATABASE_URL="https://a.free.gsoftware.ravendb.cloud/" \
+DATABASE_NEEDS_CERTIFICATE="true" \
+LOCAL_API_PORT="5000" \
+IS_RUNNING_ON_HEROKU="false" \
+USE_HEADLESS_CHROMIUM="true" \
+CLIENT_ID="dae2844a-25dd-4809-9e56-a49218ac86e6"\
+INSTANCE_ID="Bot2"

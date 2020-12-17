@@ -51,11 +51,12 @@ namespace Mega.WhatsAppAutomator.Api
             {
                 EnvironmentConfiguration.DatabaseName = args[0] ?? throw new Exception("ENV DATABASE_NAME not set");
                 EnvironmentConfiguration.DatabaseUrl = args[1] ?? throw new Exception("ENV DATABASE_URL not set");
-                EnvironmentConfiguration.DatabaseNeedsCertificate = Convert.ToBoolean(args[2] ?? throw new Exception("DATABASE_NEEDS_CERT not set"));
+                EnvironmentConfiguration.DatabaseNeedsCertificate = Convert.ToBoolean(args[2] ?? throw new Exception("DATABASE_NEEDS_CERTIFICATE not set"));
                 EnvironmentConfiguration.IsRunningOnHeroku = Convert.ToBoolean(args[3] ?? throw new Exception("ENV IS_RUNNING_ON_HEROKU not set"));
                 EnvironmentConfiguration.LocalAspNetWebApiPort = Convert.ToInt32(args[4] ?? throw new Exception("LOCAL_API_PORT not set"));
                 EnvironmentConfiguration.UseHeadlessChromium = Convert.ToBoolean(args[5]);
-                EnvironmentConfiguration.InstanceId = args[6];
+                EnvironmentConfiguration.ClientId = args[6];
+                EnvironmentConfiguration.InstanceId = args[7];
                 
                 return;
             }
@@ -64,12 +65,14 @@ namespace Mega.WhatsAppAutomator.Api
                                                     ?? throw new Exception("ENV DATABASE_NAME not set");
             EnvironmentConfiguration.DatabaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
                                                    ?? throw new Exception("ENV DATABASE_URL not set");
-            EnvironmentConfiguration.DatabaseNeedsCertificate = (bool?)Convert.ToBoolean(Environment.GetEnvironmentVariable("DATABASE_NEEDS_CERT"))
+            EnvironmentConfiguration.DatabaseNeedsCertificate = (bool?)Convert.ToBoolean(Environment.GetEnvironmentVariable("DATABASE_NEEDS_CERTIFICATE"))
                                                                 ?? throw new Exception("DATABASE_NEEDS_CERT not set");
             EnvironmentConfiguration.IsRunningOnHeroku = (bool?)Convert.ToBoolean(Environment.GetEnvironmentVariable("IS_RUNNING_ON_HEROKU"))
                                                          ?? throw new Exception("ENV IS_RUNNING_ON_HEROKU not set");
             EnvironmentConfiguration.LocalAspNetWebApiPort = Convert.ToInt32(Environment.GetEnvironmentVariable("LOCAL_API_PORT"));
             EnvironmentConfiguration.UseHeadlessChromium = Convert.ToBoolean(Environment.GetEnvironmentVariable("USE_HEADLESS_CHROMIUM"));
+            EnvironmentConfiguration.ClientId = Environment.GetEnvironmentVariable("CLIENT_ID")
+                                                ?? throw new Exception("CLIENT_ID not set");
             EnvironmentConfiguration.InstanceId = Environment.GetEnvironmentVariable("INSTANCE_ID");
         }
     }

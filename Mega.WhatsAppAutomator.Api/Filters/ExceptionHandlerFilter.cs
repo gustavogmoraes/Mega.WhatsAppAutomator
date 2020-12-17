@@ -27,7 +27,8 @@ namespace Mega.WhatsAppAutomator.Api.Filters
 
             context.Result = new InternalServerErrorObjectResult(new RequestResult
             {
-                Message = "Ocorreu um erro desconhecido na API!\nO desenvolvedor já foi contatado com os logs e informações e já está trabalhando para resolver.\nTente refazer a requisição."
+                Message = "Ocorreu um erro desconhecido na API!\nO desenvolvedor já foi contatado com os logs e informações e já está trabalhando para resolver.\n" +
+                          "Tente refazer a requisição."
             });
         }
 

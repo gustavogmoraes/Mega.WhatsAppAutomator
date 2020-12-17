@@ -11,6 +11,7 @@ using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp.Contrib.Extensions;
 using PuppeteerSharp.Mobile;
 using System.Linq.Expressions;
+using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -28,18 +29,18 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
             }
             
-            Console.WriteLine($"Trying to launch");
+            WriteOnConsole($"Trying to launch");
             var launchOptions = PupeteerMetadata.GetLaunchOptions();
 
             var browser = await Puppeteer.LaunchAsync(launchOptions);
             var page = await browser.NewPageAsync();
-            Console.WriteLine($"Launched, now going to page");
+            WriteOnConsole($"Launched, now going to page");
 
             StartQueue(page);
         }
         public static void ExitBrowser()
         {
-            Console.WriteLine("Received stop request, after the running cycle ends we will stop");
+            WriteOnConsole("Received stop request, after the running cycle ends we will stop");
             AutomationQueue.StopBrowser = true;
         }
         
@@ -50,25 +51,25 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             // followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
             if (!runningInDocker)
             {
-                Console.WriteLine("Not running on Docker, checking and downloading browser/dependencies");
+                WriteOnConsole("Not running on Docker, checking and downloading browser/dependencies");
                 await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
             }
             
-            Console.WriteLine("Trying to launch");
+            WriteOnConsole("Trying to launch");
             var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions());
 
             BrowserRef = browser;
 
             var page = await browser.NewPageAsync();
-            Console.WriteLine($"Launched, now going to page");
+            WriteOnConsole($"Launched, now going to page");
             await NavigateToWhatsAppWebPage(page);
 
             var amILogged = await CheckItsLoggedIn(page);
-            Console.WriteLine(amILogged ? "I am logged" : "I AM NOT LOGGED IN");
+            WriteOnConsole(amILogged ? "I am logged" : "I AM NOT LOGGED IN");
             if (!amILogged)
             {
                 await GetQrCode(page);
-                Console.WriteLine("Waiting for QrCode scan");
+                WriteOnConsole("Waiting for QrCode scan");
                 await WaitForSetup(page, TimeSpan.FromMinutes(5));
             }
 
@@ -95,7 +96,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         // 	await page.ClickOnElementAsync(WhatsAppWebMetadata.Unread);
         // 	await page.ExposeFunctionAsync("newChat", async (string text) =>
 		// 	{
-		// 		Console.WriteLine(text);
+		// 		WriteOnConsole(text);
 		// 	});
         //}
 
@@ -165,7 +166,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         public static async Task GetQrCode(Page page)
         {
-            Console.WriteLine("Getting QrCode");
+            WriteOnConsole("Getting QrCode");
             Thread.Sleep(5000);
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = (int?)Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
             Thread.Sleep(TimeSpan.FromSeconds(3));
@@ -175,7 +176,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
 
             var fileName = Path.Combine(FileManagement.ScreenshotsDirectory, "QrCode.jpg");
-            Console.WriteLine($"Saved file at {fileName}");
+            WriteOnConsole($"Saved file at {fileName}");
             await page.ScreenshotAsync(fileName, new ScreenshotOptions { Clip = await page.GetElementClipAsync(WhatsAppWebMetadata.SelectorMainDiv) });
         }
     }
