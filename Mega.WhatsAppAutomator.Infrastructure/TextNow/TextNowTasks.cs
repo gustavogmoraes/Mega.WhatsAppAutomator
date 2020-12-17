@@ -5,6 +5,7 @@ using Mega.WhatsAppAutomator.Domain.Objects;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using PuppeteerSharp;
 using PuppeteerSharp.Input;
+using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure.TextNow
 {
@@ -23,7 +24,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.TextNow
             
             await page.ClickOnElementAsync("#send_button");
             
-            Console.WriteLine($"Message sent to {message.Number} via TextNow");
+            WriteOnConsole($"Message sent to {message.Number} via TextNow");
         }
 
         private static string BypassExpression(string message) =>

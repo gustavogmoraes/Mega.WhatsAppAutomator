@@ -49,7 +49,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         //    } 
         //    catch (Exception err) 
         //    {
-        //        Console.WriteLine("Restore cookie error", err);
+        //        WriteOnConsole("Restore cookie error", err);
         //    }
         //}
 

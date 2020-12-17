@@ -114,21 +114,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 		{
 			if (processLoopOnDatabase)
 			{
-				using (var bulkInsert = store.BulkInsert())
+				using var bulkInsert = store.BulkInsert();
+				foreach (var item in list)
 				{
-					foreach (var item in list)
-					{
-						bulkInsert.Store(item);
-					}
+					bulkInsert.Store(item);
 				}
+
 				return;
 			}
 
-			using (var session = store.OpenSession())
+			using var session = store.OpenSession();
+			foreach (var item in list.ToList())
 			{
-				list.ToList().ForEach(item => session.Store(item));
-				session.SaveChanges();
+				session.Store(item);
 			}
+			
+			session.SaveChanges();
 		}
 
 		public static T Random<T>(this IEnumerable<T> input)
@@ -139,9 +140,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 			return list.ElementAt(random.Next(0, list.Count));
 		}
 
-		public static string TimeSpanToReport(this TimeSpan ts)
+		public static string TimeSpanToReport(this TimeSpan ts, bool considerMs = false)
 		{
-			return new DateTime(ts.Ticks).ToString("mm:ss");
+			var ms = (considerMs ? $":{ts.Milliseconds}" : string.Empty);
+
+			var stringResult = new DateTime(ts.Ticks).ToString("mm:ss");
+			
+			return stringResult + ms;
 		}
 
 		public static void SaveStreamAsFile(this Stream inputStream, string filePath)
@@ -238,7 +243,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 			var result = await function.Invoke();
 			stopwatch.Stop();
 			
-			Console.WriteLine(
+			WriteOnConsole(
 				$"At {DateTime.UtcNow.ToBraziliaDateTime()} {log ?? string.Empty}"
 				.Replace("{totalTime}", stopwatch.Elapsed.TimeSpanToReport()));
 			
@@ -321,6 +326,70 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 					directoryInfo.Delete(recursive: true);
 				}
 			}
+		}
+		
+		public static void ExecuteWithElapsedTime(Action taskToExecute, out TimeSpan elapsedTime)
+		{
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+			taskToExecute.Invoke();
+			stopwatch.Stop();
+
+			elapsedTime = stopwatch.Elapsed;
+		}
+		
+		public static T ExecuteWithElapsedTime<T>(Func<T> taskToExecute, out TimeSpan elapsedTime)
+		{
+			var stopwatch = new Stopwatch();
+			stopwatch.Start();
+			var result = taskToExecute.Invoke();
+			stopwatch.Stop();
+			
+			elapsedTime = stopwatch.Elapsed;
+
+			return result;
+		}
+		
+		public static void ClearCurrentConsoleLine()
+		{
+			int currentLineCursor = Console.CursorTop;
+			Console.SetCursorPosition(0, Console.CursorTop);
+			Console.Write(new string(' ', Console.WindowWidth)); 
+			Console.SetCursorPosition(0, currentLineCursor);
+		}
+		
+		public static string LastWrittenLine { get; set; }
+		
+		public static DateTime LastTimeThatIdled { get; set; }
+		
+		public static void WriteOnConsole(string line)
+		{
+			LastWrittenLine = line;
+			Console.WriteLine(line);
+		}
+
+		public static string NumberToReport(this string number)
+		{
+			var countryCode = number.Substring(0, 3);
+			var areaCode = number.Substring(3, 2);
+			
+			var realNumber = number.Split(countryCode + areaCode).LastOrDefault();
+
+			if (realNumber[0] == '9' && realNumber[1] == '9')
+			{
+				realNumber = realNumber.Substring(0, 4) + "-" + realNumber.Substring(4);
+				//  Do nothing
+			}
+
+			if (realNumber[0] == '9' || realNumber.Length != 8)
+			{
+				return $"{countryCode} {areaCode} {realNumber}";
+			}
+			
+			realNumber = '9' + realNumber;
+			realNumber = realNumber.Substring(0, 5) + "-" + realNumber.Substring(5);
+
+			return $"{countryCode} {areaCode} {realNumber}";
 		}
 	}
 }

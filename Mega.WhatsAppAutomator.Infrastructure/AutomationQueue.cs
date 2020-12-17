@@ -22,7 +22,7 @@ using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Raven.Client.Documents.Linq;
 using System.Text.RegularExpressions;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
-using Extensions = Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
+using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -48,7 +48,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                WriteOnConsole(e.Message);
                 throw;
             }
 
@@ -80,10 +80,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             var returnList = await GetReturnListAsync();
             if (!returnList.Any() && ClientConfiguration.PriorityzeFinalClients)
             {
-                Console.WriteLine("Did not get any final client messages, changing configuration");
+                WriteOnConsole("Did not get any final client messages, changing configuration");
                 using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
                 var client = await session.Query<Client>()
-                    .FirstOrDefaultAsync(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1");
+                    .FirstOrDefaultAsync(x => x.Id == EnvironmentConfiguration.ClientId);
 
                 client.SendMessageConfiguration.PriorityzeFinalClients = false;
 
@@ -103,11 +103,24 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static void GetAndSetClientConfig()
         {
-            using var session = Stores.MegaWhatsAppApi.OpenSession();
-            ClientConfiguration = session.Query<Client>()
-                .Where(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1")
-                .Select(x => x.SendMessageConfiguration)
-                .FirstOrDefault();
+            var success = false;
+            while (!success)
+            {
+                try
+                {
+                    using var session = Stores.MegaWhatsAppApi.OpenSession();
+                    ClientConfiguration = session.Query<Client>()
+                        .Where(x => x.Id == EnvironmentConfiguration.ClientId)
+                        .Select(x => x.SendMessageConfiguration)
+                        .FirstOrDefault();
+
+                    success = true;
+                }
+                catch (Exception)
+                {
+                    WriteOnConsole("Failed, trying again");
+                }
+            }
         }
 
         public static SendMessageConfiguration ClientConfiguration { get; set; }
@@ -142,30 +155,73 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
-                //throw;
+                WriteOnConsole(e.Message);
+                throw;
             }
         }
 
+        private static async Task <int> GetToBeSentCount()
+        {
+            using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
+            return await session.Query<ToBeSent>()
+                .Where(x => x.CurrentlyProcessingOnAnotherInstance != true)
+                .CountAsync();
+        }    
+            
         private static async Task SendMessagesGroupingByNumber()
         {
-            var stp = new Stopwatch();
-            stp.Start();
-            var groupsOfMessagesByNumber = await GetMessagesToBeSentByGroupAsync();
-            stp.Stop();
+            var totalIdleTime = new TimeSpan();
             
+            var (groupsOfMessagesByNumber, totalOfGottenMessages) = 
+                await ExecuteWithElapsedTime(async () => await GetMessagesToBeSentByGroupAsync(), out var queryTime);
+            var toBeSentCount = await GetToBeSentCount();
+
             if (groupsOfMessagesByNumber.Count > 0)
             {
-                Console.WriteLine(
-                    $"At {DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of messages grouped by number  {ClientConfiguration.MessagesPerCycleNumberGroupingStrategy} messages, " +
-                    $"got {groupsOfMessagesByNumber.Count} groups of messages to be sent, request time: {stp.Elapsed.TimeSpanToReport()}\n");
+                totalIdleTime = new TimeSpan();
+                LastWrittenLine = null;
+                WriteOnConsole(GetReportMessage(groupsOfMessagesByNumber, toBeSentCount, totalOfGottenMessages, queryTime));
+                
                 await SendGroupOfMessagesByNumber(Page, groupsOfMessagesByNumber);
 
                 return;
             }
             
-            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()} Got no messages to sent, idling...");
-            Thread.Sleep(TimeSpan.FromSeconds(15));
+            // WriteOnConsole("Test");
+            // Console.SetCursorPosition(0, Console.CursorTop - 1);
+            // ClearCurrentConsoleLine();
+            
+            Idle(totalIdleTime);
+        }
+
+        private static void Idle(TimeSpan totalIdleTime)
+        {
+            if (!string.IsNullOrEmpty(LastWrittenLine) && LastWrittenLine.StartsWith("Got no messages to send"))
+            {
+                ClearCurrentConsoleLine();
+                WriteOnConsole($"{DateTime.UtcNow.ToBraziliaDateTime()} ˜ {LastTimeThatIdled} " +
+                               $"Got no messages to send, idling for {ClientConfiguration.IdleTime} seconds... " +
+                               $"Total time idling: {totalIdleTime.TimeSpanToReport()}");
+
+                return;
+            }
+            
+            WriteOnConsole($"{DateTime.UtcNow.ToBraziliaDateTime()} Got no messages to send, idling for {ClientConfiguration.IdleTime} seconds...");
+
+            LastTimeThatIdled = DateTime.UtcNow.ToBraziliaDateTime();
+            totalIdleTime = totalIdleTime.Add(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
+            
+            Thread.Sleep(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
+        }
+
+        private static string GetReportMessage(List<IGrouping<string, ToBeSent>> groupsOfMessagesByNumber, int toBeSentCount, int totalOfMessages, TimeSpan queryTime)
+        {
+            return $"{DateTime.UtcNow.ToBraziliaDateTime()}, started new cycle of messages grouped by number\n" +
+                   $"Group size: {ClientConfiguration.MessagesPerCycleNumberGroupingStrategy}\n" +
+                   $"Number of gotten messages: {totalOfMessages}\n" +
+                   $"Total of groups: {groupsOfMessagesByNumber.Count}\n" +
+                   $"Number of messages remaining to be sent: {toBeSentCount}\n" +
+                   $"Request time: {queryTime.TimeSpanToReport()}\n";
         }
 
         private static async Task SendGroupOfMessagesByNumber(Page page, List<IGrouping<string,ToBeSent>> groupsOfMessagesByNumber)
@@ -177,44 +233,52 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 while (!(await WhatsAppWebTasks.CheckPageIntegrity(page)))
                 {
-                    Console.WriteLine("Page integrity compromised, reloading...");
+                    WriteOnConsole("\tPage integrity compromised, reloading...");
                     await page.ReloadAsync();
                     
-                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                    Thread.Sleep(TimeSpan.FromSeconds(30));
                 }
 
                 var number = group.Key;
                 var texts = group.Select(x => x.Message.Text).ToList();
                 var messages = group.ToList();
                 
-                Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Writing {texts.Count} messages to number {number}");
+                // WriteOnConsole($"\t{DateTime.UtcNow.ToBraziliaDateTime()}: Writing {texts.Count} messages to number {number}");
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
                 
                 WhatsAppWebTasks.TreatStrangeNumbers(ref number);
                 
-                Console.WriteLine("Checking if number exists");
+                //WriteOnConsole("Checking if number exists");
                 var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
                 if (!numberExists)
                 {
                     await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, messages);
                     RemoveNotSentMessages(messages);
-                    Console.WriteLine($"Number {number} does not exist on WhatsApp, storing as not delivered");
+                    WriteOnConsole($"\tNumber {number} does not exist on WhatsApp, storing as not delivered");
                 }
                 else
                 {
                     await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
                     TickSentMessages(messages);
-                    
-                    Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}: Sent {texts.Count} messages to number {number}");
+
+                    var totalLength = texts.Sum(x =>x.Length);
+                    stopwatch.Stop();
+                    WriteOnConsole(
+                        $"\t{DateTime.UtcNow.ToBraziliaDateTime()}: " +
+                             $"Sent {texts.Count} messages with total length of {totalLength} characters to number " +
+                             $"{number.NumberToReport()} in {stopwatch.Elapsed.TimeSpanToReport()}");
                 }
-                
-                stopwatch.Stop();
+
+                if (stopwatch.IsRunning)
+                {
+                    stopwatch.Stop();
+                }
                 Thread.Sleep(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages));
             }
             
             outerStopwatch.Stop();
-            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent group of messages in {outerStopwatch.Elapsed.TimeSpanToReport()}");
+            WriteOnConsole($"{DateTime.UtcNow.ToBraziliaDateTime()}, sent group of messages in {outerStopwatch.Elapsed.TimeSpanToReport()}\n");
         }
 
         private static void RemoveNotSentMessages(List<ToBeSent> messages)
@@ -228,25 +292,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             session.SaveChanges();
         }
 
-        private static async Task<List<IGrouping<string, ToBeSent>>> GetMessagesToBeSentByGroupAsync()
+        private static async Task<Tuple<List<IGrouping<string, ToBeSent>>, int>> GetMessagesToBeSentByGroupAsync()
         {
-            List<ToBeSent> items;
-            using (var session = Stores.MegaWhatsAppApi.OpenAsyncSession())
-            {
-                items = await session.Query<ToBeSent>()
-                    .Where(x =>x.CurrentlyProcessingOnAnotherInstance != true)
-                    .OrderBy(x => x.EntryTime)
-                    .Take(ClientConfiguration.MessagesPerCycleNumberGroupingStrategy)
-                    .ToListAsync();
-            }
+            using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
+            var items = await session.Query<ToBeSent>()
+                .Where(x => x.CurrentlyProcessingOnAnotherInstance != true)
+                .OrderBy(x => x.EntryTime)
+                .Take(ClientConfiguration.MessagesPerCycleNumberGroupingStrategy)
+                .ToListAsync();
 
             if (items.Any())
             {
                 Stores.MegaWhatsAppApi.BulkUpdate(items, x => x.CurrentlyProcessingOnAnotherInstance, true);
             }
             
-            var nmberGrouping = items.GroupBy(x => x.Message.Number).ToList();
-            return nmberGrouping;
+            var numberGrouping = items.GroupBy(x => x.Message.Number).ToList();
+            return new Tuple<List<IGrouping<string, ToBeSent>>, int>(numberGrouping, items.Count);
         }
 
         private static string GotXMessagesToBeSent() =>
@@ -255,7 +316,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task SendMessagesNoStrategy()
         {
-            var toBeSentMessages = await Extensions.ExecuteWithLogsAsync(GetMessagesToBeSentAsync);
+            var toBeSentMessages = await ExecuteWithLogsAsync(GetMessagesToBeSentAsync);
             
             if (toBeSentMessages.Any())
             {
@@ -265,7 +326,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static void SaveChromeUserData()
         {
-            var browserFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BrowserFiles");
+            var browserFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, "BrowserFiles");
             var userDataDirPath = Path.Combine(browserFilesDir, "user-data-dir");
 
             var instanceId = EnvironmentConfiguration.InstanceId;
@@ -281,7 +342,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             new DirectoryInfo(Path.Combine(PupeteerMetadata.UserDataDir, "Default")).DeleteAllBut(PupeteerMetadata.UserDataDirDirectoriesAndFilesExceptionsToNotDelete);
             new DirectoryInfo(PupeteerMetadata.UserDataDir).DeleteAllBut(new[] { Path.Combine(PupeteerMetadata.UserDataDir, "Default") });
             
-            Console.WriteLine("Compressing file");
+            WriteOnConsole("Compressing file");
             ZipFile.CreateFromDirectory(userDataDirPath, zipPath, CompressionLevel.Optimal, false);
             
             Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -295,18 +356,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 new DirectoryInfo(browserFilesDir).GetPermission();
             }
             
-            Console.WriteLine("Saving user data file to database");
+            WriteOnConsole("Saving user data file to database");
             
             using (var session = Stores.MegaWhatsAppApi.OpenSession())
             using (var stream = File.Open(zipPath, FileMode.Open))
             {
-                var client = session.Query<Client>().FirstOrDefault(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1");
+                var client = session.Query<Client>().FirstOrDefault(x => x.Id == EnvironmentConfiguration.ClientId);
                 session.Advanced.Attachments.Store(client, instanceId + ".zip", stream);
+                
                 session.SaveChanges();
             }
             
             Thread.Sleep(TimeSpan.FromSeconds(5));
-            Console.WriteLine("Saved");
+            WriteOnConsole("Saved");
             
             osPlat = DevOpsHelper.GetOsPlatform();
             if (osPlat != OSPlatform.Windows)
@@ -318,7 +380,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 new DirectoryInfo(browserFilesDir).GetPermission();
             }
             
-            Console.WriteLine("Now trying to delete everything");
+            WriteOnConsole("Now trying to delete everything");
             Directory.Delete(browserFilesDir, true);
         }
 
@@ -337,12 +399,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 if (!ClientConfiguration.HumanizerConfiguration.InsaneMode) { SleepRandomTimeBasedOnConfiguration(); }
                 stp.Stop();
                 
-                Console.WriteLine($"\tAt {DateTime.UtcNow.ToBraziliaDateTime()}, sent a messsage of {message.Message.Text.Length} characters in {stp.Elapsed.TimeSpanToReport()} - {count}/{total}");
+                WriteOnConsole($"\tAt {DateTime.UtcNow.ToBraziliaDateTime()}, sent a messsage of {message.Message.Text.Length} characters in {stp.Elapsed.TimeSpanToReport()} - {count}/{total}");
             }
             
             TickSentMessages(toBeSentMessages);
             outerStp.Stop();
-            Console.WriteLine($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent {count} messages, on: {outerStp.Elapsed.TimeSpanToReport()}");
+            WriteOnConsole($"At {DateTime.UtcNow.ToBraziliaDateTime()}, sent {count} messages, on: {outerStp.Elapsed.TimeSpanToReport()}");
         }
 
         private static void SleepRandomTimeBasedOnConfiguration()
@@ -377,13 +439,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static List<ToBeSent> QueryToBeSentByThisNumber(string number)
         {
-            using (var session = Stores.MegaWhatsAppApi.OpenSession())
-            {
-                return session.Query<ToBeSent>()
-                    .Take(1000)
-                    .Where(x => x.Message.Number == number)
-                    .ToList();
-            }
+            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            return session.Query<ToBeSent>()
+                .Take(1000)
+                .Where(x => x.Message.Number == number)
+                .ToList();
         }
 
         private static List<Message> TreatLongMessage(Message message)
@@ -413,18 +473,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task DelegateSendMessageToMobilePhone(Message message)
         {
-            using (var session = Stores.MegaWhatsAppApi.OpenAsyncSession())
+            using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
+            await session.StoreAsync(new ToBeSent
             {
-                await session.StoreAsync(new ToBeSent
-                {
-                    Message = message,
-                    EntryTime = DateTime.UtcNow.ToBraziliaDateTime()
-                });
+                Message = message,
+                EntryTime = DateTime.UtcNow.ToBraziliaDateTime()
+            });
 
-                await session.SaveChangesAsync();
+            await session.SaveChangesAsync();
                 
-                Console.WriteLine($"Message to {message.Number} delegated via Mega.SmsAutomator");
-            }
+            WriteOnConsole($"Message to {message.Number} delegated via Mega.SmsAutomator");
         }
 
         // private static async Task TimeToRestart()
@@ -444,7 +502,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         // {
         //     using var session = Stores.MegaWhatsAppApi.OpenSession();
         //     return session.Query<Client>()
-        //         .Where(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1")
+        //         .Where(x => x.Id == EnvironmentConfiguration.ClientId)
         //         .Select(x => x.RestartConfiguration)
         //         .FirstOrDefault();
         // }

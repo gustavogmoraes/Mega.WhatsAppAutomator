@@ -48,20 +48,24 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static async Task SendHumanizedMessageByNumberGroups(Page page, string number, List<string> texts)
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
-            var clientName = "Laboratório HLAGyn";
             var random = new Random();
-
+            
+            Thread.Sleep(TimeSpan.FromSeconds(1));
             var useHumanizationMessages = UseHumanizationMessages(number);
             
             // Greetings
-            if (useHumanizationMessages) { await SendGreetings(page, clientName, random); }
-
+            if (useHumanizationMessages) { await SendGreetings(page, random); }
+            
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+            
             // Message
             await SendGroupOfMessages(page, texts, random);
             if (useHumanizationMessages) { Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage))); }
             
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+            
             // Farewell
-            if (useHumanizationMessages) { await SendFarewell(page, clientName); }
+            if (useHumanizationMessages) { await SendFarewell(page); }
         }
         
         private static bool UseHumanizationMessages(string number) =>
@@ -108,13 +112,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static async Task SendHumanizedMessage(Page page, string messageText, string number)
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
-            var clientName = "Laboratório HLAGyn";
             var random = new Random();
             
             // Greetings
             if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
             {
-                await SendGreetings(page, clientName, random);
+                await SendGreetings(page, random);
             }
             
             // Message
@@ -127,20 +130,24 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             // Farewell
             if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
             {
-                await SendFarewell(page, clientName);
+                await SendFarewell(page);
             }
         }
 
-        private static async Task SendFarewell(Page page, string clientName)
+        private static async Task SendFarewell(Page page)
         {
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell(clientName));
+            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell());
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
         }
 
         private static async Task SendMessage(Page page, string messageText, Random random, bool sendAfterTyping = true)
         {
 			await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
+            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatInput);
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+
+            await page.ClickAsync(WhatsAppWebMetadata.ChatContainer);
 			await page.TypeOnElementAsync(
 				WhatsAppWebMetadata.ChatContainer,
 				RandomSpaceBetweenWords(messageText),
@@ -171,35 +178,34 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await SendMessage(page, finalText, random);
         }
 
-        private static async Task SendGreetings(Page page, string clientName, Random random)
+        private static async Task SendGreetings(Page page, Random random)
         {
             await page.TypeOnElementAsync(
                 WhatsAppWebMetadata.ChatContainer,
-                GetHumanizedGreeting(clientName),
+                GetHumanizedGreeting(),
                 random.Next(Humanizer.MinimumGreetingTypingDelay, Humanizer.MaximumGreetingTypingDelay));
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
             Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterGreeting, Humanizer.MaximumDelayAfterGreeting)));
         }
         
-        private static string GetClientPresentation(string clientName)
+        private static string GetClientPresentation()
         {
-            return Humanizer.ClientPresentationsPool.Random().Replace("{clientName}", clientName);
+            return Humanizer.ClientPresentationsPool.Random();
         }
         
-        private static string GetHumanizedGreeting(string clientName)
+        private static string GetHumanizedGreeting()
         {
-            return $"{Humanizer.GreetingsPool.Random()} {Humanizer.CumplimentsPool.Random()}\r\n" +
-                   $"{GetClientPresentation(clientName)}";
+            return $"{Humanizer.GreetingsPool.Random()} {Humanizer.CumplimentsPool.Random()}\r\n";
         }
         
-        private static string GetHumanizedFarewell(string clientName)
+        private static string GetHumanizedFarewell()
         {
             return Humanizer.FarewellsPool.Random();
         }
         
         private static IList<string> GetCollaboratorNumbers()
         {
-            return  Humanizer.CollaboratorsContacts;
+            return Humanizer.CollaboratorsContacts;
         }
 
 		public static async Task<bool> CheckIfNumberExists(Page page, string number)
@@ -222,6 +228,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 				return true;
 			}
 		}
+        
         public static async Task<bool> CheckPageIntegrity(Page page)
         {
             try
@@ -231,7 +238,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     new WaitForSelectorOptions
                     {
                         Visible = true,
-                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(5).TotalMilliseconds)
+                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(30).TotalMilliseconds)
                     });
 
                 return true;

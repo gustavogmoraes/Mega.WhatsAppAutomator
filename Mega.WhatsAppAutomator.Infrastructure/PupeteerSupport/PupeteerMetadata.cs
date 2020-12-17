@@ -5,11 +5,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.AccessControl;
+using System.Threading;
 using Mega.WhatsAppAutomator.Domain.Objects;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
+using Raven.Client.Documents.Operations.Attachments;
+using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 using Extensions = PuppeteerSharp.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
@@ -23,6 +26,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             // "--proxy-server='direct://'",
             // "--proxy-bypass-list=*",
             // "--use-fake-ui-for-media-stream",
+            //"--disable-gpu",
             "--log-level=3",
             "--no-default-browser-check",
             "--disable-infobars",
@@ -33,7 +37,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             "--ignore-gpu-blacklist",
             "--ignore-certificate-errors",
             "--ignore-certificate-errors-spki-list",
-            //"--disable-gpu",
             "--disable-extensions",
             "--disable-default-apps",
             "--enable-features=NetworkService",
@@ -69,64 +72,85 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                     return _processedUserDataDir;
                 }
                 
-                var browserFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BrowserFiles");
+                var browserFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, "BrowserFiles");
                 var userDataDirPath = Path.Combine(browserFilesDir, "user-data-dir");
+                
                 if(!Directory.Exists(browserFilesDir))
-                {
-                    var directoryInfo = Directory.CreateDirectory(browserFilesDir);
-                    var osPlat = DevOpsHelper.GetOsPlatform();
-                    if (osPlat != OSPlatform.Windows)
-                    {
-                        DevOpsHelper.Bash($"chmod 755 {browserFilesDir}");
-                    }
-                    else
-                    {
-                        new DirectoryInfo(browserFilesDir).GetPermission();
-                    }
+                {                    
+                    CreateDirectoryWithFullPermission(browserFilesDir);
                 }
 
                 if (Directory.Exists(userDataDirPath))
                 {
                     _processedUserDataDir = userDataDirPath;
                     _didAlreadyProcessUserDataDir = true;
+                    
                     return userDataDirPath;
                 }
-
-                var instanceId = EnvironmentConfiguration.InstanceId;
-                var zipPath = userDataDirPath + ".zip";
                 
-                Console.WriteLine("Trying to download user data file");
-                using var session = Stores.MegaWhatsAppApi.OpenSession();
-                var client = session.Query<Client>().FirstOrDefault(x => x.Token == "23ddd2c6-e46c-4030-9b65-ebfc5437d8f1");
-                var att = session.Advanced.Attachments.Get(client, $"{instanceId}.zip");
-                if (att != null)
+                Thread.Sleep(TimeSpan.FromSeconds(1));
+                WriteOnConsole("Downloading user data file");
+                
+                var attachment = DownloadUserDataFileFromDataBase();
+                if (attachment != null)
                 {
-                    Console.WriteLine($"Found file, downloading it {att.Details.Size.GetReadableFileSize()}");
-                    att.Stream.SaveStreamAsFile(zipPath);
-
-                    ZipFile.ExtractToDirectory(zipPath, userDataDirPath);
-                
-                    File.Delete(zipPath);
+                    var zipPath = userDataDirPath + ".zip";
+                    ExtractUserDataFile(attachment, zipPath, userDataDirPath);
 
                     _processedUserDataDir = userDataDirPath;
                     _didAlreadyProcessUserDataDir = true;
+                    
                     return userDataDirPath;
                 }
                 
-                Console.WriteLine("Did not find user data file, creating new");
+                WriteOnConsole("Did not find user data file, creating new");
 
                 _processedUserDataDir = userDataDirPath;
                 _didAlreadyProcessUserDataDir = true;
+                
                 return userDataDirPath;
+            }
+        }
+
+        private static void ExtractUserDataFile(AttachmentResult attachment, string zipPath, string userDataDirPath)
+        {
+            WriteOnConsole($"Found file, downloading it {attachment.Details.Size.GetReadableFileSize()}");
+            attachment.Stream.SaveStreamAsFile(zipPath);
+
+            ZipFile.ExtractToDirectory(zipPath, userDataDirPath);
+
+            File.Delete(zipPath);
+        }
+
+        private static AttachmentResult DownloadUserDataFileFromDataBase()
+        {
+            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            var client = session.Query<Client>().FirstOrDefault(x => x.Id == EnvironmentConfiguration.ClientId);
+            var attachment = session.Advanced.Attachments.Get(client, $"{EnvironmentConfiguration.InstanceId}.zip");
+            
+            return attachment;
+        }
+
+        private static void CreateDirectoryWithFullPermission(string browserFilesDir)
+        {
+            _ = Directory.CreateDirectory(browserFilesDir);
+            var osPlat = DevOpsHelper.GetOsPlatform();
+            if (osPlat != OSPlatform.Windows)
+            {
+                DevOpsHelper.Bash($"chmod 755 {browserFilesDir}");
+            }
+            else
+            {
+                new DirectoryInfo(browserFilesDir).GetPermission();
             }
         }
 
         public static BrowserFetcherOptions FetcherOptions => new BrowserFetcherOptions { Path = FetcherDownloadPath };
         private static string FetcherDownloadPath => Path.Combine(PupeteerBasePath, "Browser");
-        private static string PupeteerBasePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PupeteerFiles");
+        private static string PupeteerBasePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory!, "PupeteerFiles");
         private static string ExecutablePath => SolveExecutablePath();
         public static bool AmIRunningInDocker => Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
-        public static bool Headless => AmIRunningInDocker || EnvironmentConfiguration.UseHeadlessChromium;
+        private static bool Headless => AmIRunningInDocker || EnvironmentConfiguration.UseHeadlessChromium;
 
         public static LaunchOptions GetLaunchOptions()
         {
@@ -143,26 +167,29 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         {
             if (AmIRunningInDocker)
             {
-                Console.WriteLine($"Running in docker, returning path as {Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH")}");
+                WriteOnConsole($"Running in docker, returning path as {Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH")}");
                 return Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH");
             }
             var osPlatform = DevOpsHelper.GetOsPlatform();
             if(osPlatform == OSPlatform.Linux)
             {
-                return Path.Combine(FetcherDownloadPath, "");
+                // TODO
+                throw new NotImplementedException();
             }
-            else if(osPlatform == OSPlatform.OSX)
+
+            if(osPlatform == OSPlatform.OSX)
             {
                 var macFolder = Directory.GetDirectories(FetcherDownloadPath).FirstOrDefault(x => x.ToLowerInvariant().Contains("mac"));
                 return Path.Combine(FetcherDownloadPath, $@"{macFolder}/chrome-mac/Chromium.app/Contents/MacOS/Chromium");
             }
-            else if (osPlatform == OSPlatform.Windows)
+
+            if (osPlatform == OSPlatform.Windows)
             {
                 var winFolder = Directory.GetDirectories(FetcherDownloadPath).FirstOrDefault(x => x.ToLowerInvariant().Contains("win"));
                 return Path.Combine(FetcherDownloadPath, $@"{winFolder}/chrome-win/Chrome.exe");
             }
 
-            throw new FileNotFoundException();
+            throw new NotImplementedException();
         }
     }
 }
