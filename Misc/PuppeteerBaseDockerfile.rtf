@@ -1,11 +1,13 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2513
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fmodern\fcharset0 Courier;\f1\fmodern\fcharset0 Courier-Oblique;}
 {\colortbl;\red255\green255\blue255;\red134\green156\blue255;\red30\green31\blue41;\red252\green93\blue186;
-\red30\green31\blue41;\red246\green246\blue239;\red174\green122\blue247;\red134\green156\blue255;\red253\green170\blue90;
-\red238\green252\blue122;}
+\red246\green246\blue239;\red174\green122\blue247;\red253\green170\blue90;\red238\green252\blue122;\red252\green93\blue186;
+\red30\green31\blue41;\red246\green246\blue239;\red174\green122\blue247;\red124\green228\blue252;\red238\green252\blue122;
+\red134\green156\blue255;}
 {\*\expandedcolortbl;;\csgenericrgb\c52549\c61176\c100000;\csgenericrgb\c11765\c12157\c16078;\csgenericrgb\c98824\c36471\c72941;
-\csgenericrgb\c11765\c12157\c16078;\csgenericrgb\c96471\c96471\c93725;\csgenericrgb\c68235\c47843\c96863;\csgenericrgb\c52549\c61176\c100000;\csgenericrgb\c99216\c66667\c35294;
-\csgenericrgb\c93333\c98824\c47843;}
+\csgenericrgb\c96471\c96471\c93725;\csgenericrgb\c68235\c47843\c96863;\csgenericrgb\c99216\c66667\c35294;\csgenericrgb\c93333\c98824\c47843;\csgenericrgb\c98824\c36471\c72941;
+\csgenericrgb\c11765\c12157\c16078;\csgenericrgb\c96471\c96471\c93725;\csgenericrgb\c68235\c47843\c96863;\csgenericrgb\c48627\c89412\c98824;\csgenericrgb\c93333\c98824\c47843;
+\csgenericrgb\c52549\c61176\c100000;}
 \paperw11900\paperh16840\margl1440\margr1440\vieww22020\viewh13960\viewkind0
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
 
@@ -37,17 +39,22 @@
 OR\
 \
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
-\cf4 \cb5 FROM \cf6 mcr.microsoft.com\cf4 /\cf6 dotnet\cf4 /\cf6 core\cf4 /\cf6 aspnet:\cf7 3.1\
+\cf4 \cb3 FROM \cf5 mcr.microsoft.com\cf4 /\cf5 dotnet\cf4 /\cf5 core\cf4 /\cf5 aspnet:\cf6 3.1\
 \
-\cf8 #ARG CHROME_VERSION="84.0.4147.89-1"\
-\cf4 RUN \cf6 apt-get update\
-\cf4 RUN \cf6 apt-get update \cf4 && \cf6 apt-get \cf4 -\cf6 f install \cf4 && \cf6 apt-get \cf4 -\cf6 y install wget gnupg2 apt-utils\
-\cf8 #RUN wget --no-verbose -O /tmp/chrome.deb http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_$\{CHROME_VERSION\}_amd64.deb \\\
-\cf4 RUN \cf6 wget \cf4 --\cf6 no-verbose \cf4 -\cf6 O \cf4 /\cf6 tmp\cf4 /\cf6 chrome.deb https:\cf4 //\cf6 dl.google.com\cf4 /\cf6 linux\cf4 /\cf6 direct\cf4 /\cf6 google-chrome-stable_current_amd64.deb \\\
-\cf4 && \cf6 apt-get install \cf4 -\cf6 y \cf4 /\cf6 tmp\cf4 /\cf6 chrome.deb \cf4 --\cf6 no-install-recommends \cf4 --\cf6 allow-downgrades fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \\\
-\cf4 && \cf6 rm \cf4 /\cf6 tmp\cf4 /\cf6 chrome.deb\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \cb3 #ARG CHROME_VERSION="84.0.4147.89-1"\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf4 \cb3 RUN \cf5 apt-get update\
+\cf4 RUN \cf5 apt-get update \cf4 && \cf5 apt-get \cf4 -\cf5 f install \cf4 && \cf5 apt-get \cf4 -\cf5 y install wget gnupg2 apt-utils\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \cb3 #RUN wget --no-verbose -O /tmp/chrome.deb http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_$\{CHROME_VERSION\}_amd64.deb \\\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf4 \cb3 RUN \cf5 wget \cf4 --\cf5 no-verbose \cf4 -\cf5 O \cf4 /\cf5 tmp\cf4 /\cf5 chrome.deb https:\cf4 //\cf5 dl.google.com\cf4 /\cf5 linux\cf4 /\cf5 direct\cf4 /\cf5 google-chrome-stable_current_amd64.deb \\\
+\cf4 && \cf5 apt-get install \cf4 -\cf5 y \cf4 /\cf5 tmp\cf4 /\cf5 chrome.deb \cf4 --\cf5 no-install-recommends \cf4 --\cf5 allow-downgrades fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \\\
+\cf4 && \cf5 rm \cf4 /\cf5 tmp\cf4 /\cf5 chrome.deb\
 \
-\cf8 # Add user, so we don't need --no-sandbox.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \cb3 # Add user, so we don't need --no-sandbox.\
 #RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \\\
 #    && mkdir -p /home/pptruser/Downloads \\\
 #    && chown -R pptruser:pptruser /home/pptruser\
@@ -59,13 +66,51 @@ OR\
 #RUN chown -R pptruser:pptruser /app\
 #USER pptruser\
 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf4 \cb3 ENV 
+\f1\i \cf7 DOTNET_RUNNING_IN_CONTAINER
+\f0\i0 \cf5 =true\
 \cf4 ENV 
-\f1\i \cf9 DOTNET_RUNNING_IN_CONTAINER
-\f0\i0 \cf6 =true\
-\cf4 ENV 
-\f1\i \cf9 PUPPETEER_EXECUTABLE_PATH 
-\f0\i0 \cf10 "/usr/bin/google-chrome"\
+\f1\i \cf7 PUPPETEER_EXECUTABLE_PATH 
+\f0\i0 \cf8 "/usr/bin/google-chrome"\
 \
-\cf8 #docker build -t mega.whatsappautomator . && docker run -p 5000:5000 --env IS_DEV_ENV=true --env ASPNETCORE_ENVIRONMENT=Development --env ASPNETCORE_URLS=http://+:5000 -t -i --expose 5000 --security-opt seccomp:unconfined mega.whatsappautomator\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \cb3 #docker build -t mega.whatsappautomator . && docker run -p 5000:5000 --env IS_DEV_ENV=true --env ASPNETCORE_ENVIRONMENT=Development --env ASPNETCORE_URLS=http://+:5000 -t -i --expose 5000 --security-opt seccomp:unconfined mega.whatsappautomator\
+\
+\
+## USE THIS\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf9 \cb10 FROM \cf11 mcr.microsoft.com\cf9 /\cf11 dotnet\cf9 /\cf11 sdk:\cf12 3.1\
+\
+\cf9 ARG 
+\f1\i \cf13 CHROME_VERSION
+\f0\i0 \cf11 =\cf14 "84.0.4147.89-1"\
+\cf9 RUN \cf11 apt-get update\
+\cf9 RUN \cf11 apt-get update \cf9 && \cf11 apt-get \cf9 -\cf11 f install \cf9 && \cf11 apt-get \cf9 -\cf11 y install wget gnupg2 apt-utils\
+\cf9 RUN \cf11 wget \cf9 --\cf11 no-verbose \cf9 -\cf11 O \cf9 /\cf11 tmp\cf9 /\cf11 chrome.deb https:\cf9 //\cf11 dl.google.com\cf9 /\cf11 linux\cf9 /\cf11 direct\cf9 /\cf11 google-chrome-stable_current_amd64.deb \\\
+\cf9 && \cf11 apt-get install \cf9 -\cf11 y \cf9 /\cf11 tmp\cf9 /\cf11 chrome.deb \cf9 --\cf11 no-install-recommends \cf9 --\cf11 allow-downgrades fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \\\
+\cf9 && \cf11 rm \cf9 /\cf11 tmp\cf9 /\cf11 chrome.deb\
+\
+\cf15 #Add user, so we don't need --no-sandbox.\
+\cf9 RUN \cf11 groupadd \cf9 -\cf11 r pptruser \cf9 && \cf11 useradd \cf9 -\cf11 r \cf9 -\cf11 g pptruser \cf9 -\cf11 G audio,video pptruser \\\
+    \cf9 && \cf11 mkdir \cf9 -\cf11 p \cf9 /\cf11 home\cf9 /\cf11 pptruser\cf9 /\cf11 Downloads \\\
+    \cf9 && \cf11 chown \cf9 -\cf11 R pptruser:pptruser \cf9 /\cf11 home\cf9 /\cf11 pptruser\
+\
+\cf9 WORKDIR /\cf11 app\
+\cf9 RUN \cf11 usermod \cf9 -\cf11 G root pptruser\
+\
+\cf15 #Run everything after as non-privileged user.\
+\cf9 RUN \cf11 chown \cf9 -\cf11 R pptruser:pptruser \cf9 /\cf11 app\
+\cf9 USER \cf11 pptruser\
+\
+\cf9 ENV 
+\f1\i \cf13 DOTNET_RUNNING_IN_CONTAINER
+\f0\i0 \cf11 =true\
+\cf9 ENV 
+\f1\i \cf13 PUPPETEER_EXECUTABLE_PATH 
+\f0\i0 \cf14 "/usr/bin/google-chrome"\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf2 \cb3 \
 \
 }
