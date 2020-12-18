@@ -381,11 +381,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 				//  Do nothing
 			}
 
-			if (realNumber[0] == '9' || realNumber.Length != 8)
+			else if (realNumber[0] == '9' || realNumber.Length != 8)
 			{
-				return $"{countryCode} {areaCode} {realNumber}";
+				return $"{countryCode} {areaCode} {realNumber.Substring(0,5)}-{realNumber.Substring(5)}";
 			}
-			
+
 			realNumber = '9' + realNumber;
 			realNumber = realNumber.Substring(0, 5) + "-" + realNumber.Substring(5);
 
