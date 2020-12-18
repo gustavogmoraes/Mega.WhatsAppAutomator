@@ -46,9 +46,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         public static async Task Start()
         {
+            //// Only necessary if not running on container, as the docker image setup downloads the browser and it's dependencies
+            //// followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
             var runningInDocker = PupeteerMetadata.AmIRunningInDocker;
-            // Only necessary if not running on container, as the docker image setup downloads the browser and it's dependencies
-            // followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
             if (!runningInDocker)
             {
                 WriteOnConsole("Not running on Docker, checking and downloading browser/dependencies");
