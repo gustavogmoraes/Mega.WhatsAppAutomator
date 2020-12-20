@@ -199,7 +199,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             if (!string.IsNullOrEmpty(LastWrittenLine) && LastWrittenLine.Contains("Got no messages to send"))
             {
-                Console.SetCursorPosition(0, Console.CursorTop - 1);
+                if (!PupeteerMetadata.AmIRunningInDocker)
+                {
+                    Console.SetCursorPosition(0, Console.CursorTop - 1);
+                }
+                
                 ClearCurrentConsoleLine();
                 WriteOnConsole($"{DateTime.UtcNow.ToBraziliaDateTime()} ˜ {LastTimeThatIdled} " +
                                $"Got no messages to send, idling for {ClientConfiguration.IdleTime} seconds... " +
