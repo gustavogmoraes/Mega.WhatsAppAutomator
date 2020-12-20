@@ -39,6 +39,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public static void StartQueue(Page page)
         {
             Page = page;
+            _totalIdleTime = new TimeSpan();
             
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
             //StopBrowser = false;
@@ -166,19 +167,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return await session.Query<ToBeSent>()
                 .Where(x => x.CurrentlyProcessingOnAnotherInstance != true)
                 .CountAsync();
-        }    
+        }
+        
+        private static TimeSpan _totalIdleTime { get; set; }
             
         private static async Task SendMessagesGroupingByNumber()
         {
-            var totalIdleTime = new TimeSpan();
-            
             var (groupsOfMessagesByNumber, totalOfGottenMessages) = 
                 await ExecuteWithElapsedTime(async () => await GetMessagesToBeSentByGroupAsync(), out var queryTime);
             var toBeSentCount = await GetToBeSentCount();
 
             if (groupsOfMessagesByNumber.Count > 0)
             {
-                totalIdleTime = new TimeSpan();
+                _totalIdleTime = new TimeSpan();
                 LastWrittenLine = null;
                 WriteOnConsole(GetReportMessage(groupsOfMessagesByNumber, toBeSentCount, totalOfGottenMessages, queryTime));
                 
@@ -191,17 +192,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             // Console.SetCursorPosition(0, Console.CursorTop - 1);
             // ClearCurrentConsoleLine();
             
-            Idle(totalIdleTime);
+            Idle();
         }
 
-        private static void Idle(TimeSpan totalIdleTime)
+        private static void Idle()
         {
-            if (!string.IsNullOrEmpty(LastWrittenLine) && LastWrittenLine.StartsWith("Got no messages to send"))
+            if (!string.IsNullOrEmpty(LastWrittenLine) && LastWrittenLine.Contains("Got no messages to send"))
             {
+                Console.SetCursorPosition(0, Console.CursorTop - 1);
                 ClearCurrentConsoleLine();
                 WriteOnConsole($"{DateTime.UtcNow.ToBraziliaDateTime()} ˜ {LastTimeThatIdled} " +
                                $"Got no messages to send, idling for {ClientConfiguration.IdleTime} seconds... " +
-                               $"Total time idling: {totalIdleTime.TimeSpanToReport()}");
+                               $"Total time idling: {_totalIdleTime.TimeSpanToReport()}");
+                
+                _totalIdleTime = _totalIdleTime.Add(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
+                LastTimeThatIdled = DateTime.UtcNow.ToBraziliaDateTime();
+                Thread.Sleep(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
 
                 return;
             }
@@ -209,7 +215,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             WriteOnConsole($"{DateTime.UtcNow.ToBraziliaDateTime()} Got no messages to send, idling for {ClientConfiguration.IdleTime} seconds...");
 
             LastTimeThatIdled = DateTime.UtcNow.ToBraziliaDateTime();
-            totalIdleTime = totalIdleTime.Add(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
             
             Thread.Sleep(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
         }
