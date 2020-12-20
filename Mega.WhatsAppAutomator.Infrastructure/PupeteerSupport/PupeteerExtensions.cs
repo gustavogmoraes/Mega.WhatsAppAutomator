@@ -16,8 +16,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         public static async Task<Clip> GetElementClipAsync(this Page page, string elementSelector)
         {
             var jTokenResult = await page.EvaluateFunctionAsync(JavaScriptFunctions.GetBoudingClientRect, elementSelector);
+            
             var rectangle = jTokenResult.ToObject<dynamic>();
-
+            if (rectangle == null)
+            {
+	            throw new NullReferenceException("Could not find the element on screen");
+            }
+            
             return new Clip
             {
                 X = rectangle.x,
@@ -57,8 +62,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         //{
         //    var temp = await ClipboardService.GetTextAsync();
         //    var pieces = text.Split(new string[] { "\r\n", "\n\r" }, StringSplitOptions.RemoveEmptyEntries).ToList();
-        //    var mensage = String.Join('\n', pieces);
-        //    await ClipboardService.SetTextAsync(mensage);
+        //    var message = String.Join('\n', pieces);
+        //    await ClipboardService.SetTextAsync(message);
         //    await page.FocusAsync(elementSelector);
         //    await page.PressControlPaste();
         //    await ClipboardService.SetTextAsync(temp);
@@ -77,7 +82,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 return;
             }
 
-			var pieces = text.Split(new string[] { "\r\n", "\n\r" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+			var pieces = text.Split(new[] { "\r\n", "\n\r" }, StringSplitOptions.None).ToList();
 			foreach (var piece in pieces)
 			{
 				await page.WaitForSelectorAsync(elementSelector);

@@ -17,5 +17,7 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
         public int MessagesPerCycleNumberGroupingStrategy { get; set; }
         
         public int IdleTime { get; set; }
+        
+        public bool ScrambleMessageWithWhitespaces { get; set; }
     }    
 }
