@@ -1,9 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Domain.Objects;
@@ -11,10 +7,7 @@ using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
-using PuppeteerSharp.Input;
-using Raven.Client;
-using Raven.Client.Documents.Operations.Configuration;
-using Raven.Client.ServerWide.Operations;
+using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
@@ -41,34 +34,39 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         public static async Task<bool> SendMessageGroupedByNumber(Page page, string number, List<string> listOfTexts)
         {
-            await SendHumanizedMessageByNumberGroups(page, number, listOfTexts);
-            return true;
+            return await SendHumanizedMessageByNumberGroups(page, number, listOfTexts);
         }
         
-        private static async Task SendHumanizedMessageByNumberGroups(Page page, string number, List<string> texts)
+        private static async Task<bool> SendHumanizedMessageByNumberGroups(Page page, string number, List<string> texts, bool randommicallyDisableHumanization = true)
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             var random = new Random();
-            
-            Thread.Sleep(TimeSpan.FromSeconds(1));
-            var useHumanizationMessages = UseHumanizationMessages(number);
-            
+
+            var useHumanizationMessages =  
+                randommicallyDisableHumanization ? RandomBoolean(random)
+                : ShouldUseHumanizationMessages(number);
+
             // Greetings
             if (useHumanizationMessages) { await SendGreetings(page, random); }
-            
-            Thread.Sleep(TimeSpan.FromSeconds(1));
-            
+
             // Message
-            await SendGroupOfMessages(page, texts, random);
+            await SendGroupOfMessages(page, texts, random, useHumanizationMessages);
             if (useHumanizationMessages) { Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage))); }
             
             Thread.Sleep(TimeSpan.FromSeconds(1));
             
             // Farewell
-            if (useHumanizationMessages) { await SendFarewell(page); }
+            if (useHumanizationMessages) { await SendFarewell(page, random); }
+
+            return useHumanizationMessages;
         }
-        
-        private static bool UseHumanizationMessages(string number) =>
+
+        private static bool RandomBoolean(Random random)
+        {
+            return random.Next(2) == 0;
+        }
+
+        private static bool ShouldUseHumanizationMessages(string number) =>
             !Humanizer.InsaneMode && 
             Humanizer.UseHumanizer && 
             !GetCollaboratorNumbers().Contains(number);
@@ -130,36 +128,43 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             // Farewell
             if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
             {
-                await SendFarewell(page);
+                await SendFarewell(page, random);
             }
         }
 
-        private static async Task SendFarewell(Page page)
+        private static async Task SendFarewell(Page page, Random random)
         {
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(WhatsAppWebMetadata.ChatContainer, GetHumanizedFarewell());
+            await page.TypeOnElementAsync(
+                elementSelector: WhatsAppWebMetadata.ChatContainer, 
+                GetHumanizedFarewell(), 
+                delayInMs: random.Next(Humanizer.MinimumDelayAfterFarewell, Humanizer.MaximumDelayAfterFarewell));
             await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
         }
 
-        private static async Task SendMessage(Page page, string messageText, Random random, bool sendAfterTyping = true)
+        private static async Task SendMessage(Page page, string messageText, Random random, bool sendAfterTyping = true, bool useHumanizer = false)
         {
 			await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatInput);
             Thread.Sleep(TimeSpan.FromSeconds(1));
+            
+            var sendIstantaneouslly = Humanizer.InsaneMode || !useHumanizer;
+            var sendDelay = sendIstantaneouslly ? 0 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay);
 
             await page.ClickAsync(WhatsAppWebMetadata.ChatContainer);
 			await page.TypeOnElementAsync(
-				WhatsAppWebMetadata.ChatContainer,
-				RandomSpaceBetweenWords(messageText),
-				delayInMs: Humanizer.InsaneMode ? 0 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay),
+				elementSelector: WhatsAppWebMetadata.ChatContainer,
+				text: RandomSpaceBetweenWords(messageText),
+				delayInMs: sendDelay,
 				useParser: true);
+            
 			if (sendAfterTyping)
 			{
 				await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
 			}
 		}
         
-        private static async Task SendGroupOfMessages(Page page, List<string> texts, Random random)
+        private static async Task SendGroupOfMessages(Page page, List<string> texts, Random random, bool useHumanizationMessages = false)
         {
             var finalText = string.Empty;
 
@@ -175,7 +180,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 finalText += "\r\n";
             }
             
-            await SendMessage(page, finalText, random);
+            await SendMessage(page, finalText, random, useHumanizationMessages);
         }
 
         private static async Task SendGreetings(Page page, Random random)
@@ -209,25 +214,48 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         }
 
 		public static async Task<bool> CheckIfNumberExists(Page page, string number)
-		{
-			try
+        {
+            //// Just to guarantee
+            number = number.Trim();
+            var doesExist = await CheckIfNumberExistsInternal(page, number);
+            if (doesExist)
+            {
+                return true;
+            }
+            
+            //// Trying the number with and without the brazilian 9th digit
+            if (number.ContainsBrazilian9ThDigit())
+            {
+                var numberWithout9ThDigit = number.RemoveBrazilian9ThDigit();
+                number = numberWithout9ThDigit;
+                return await CheckIfNumberExistsInternal(page, numberWithout9ThDigit);
+            }
+
+            var numberWith9ThDigit = number.InsertBrazilian9ThDigit();
+            number = numberWith9ThDigit;
+            return await CheckIfNumberExistsInternal(page, numberWith9ThDigit);
+        }
+
+        private static async Task<bool> CheckIfNumberExistsInternal(Page page, string number)
+        {
+            try
             {
                 await OpenChat(page, number);
-				await page.WaitForSelectorAsync(
+                await page.WaitForSelectorAsync(
                     WhatsAppWebMetadata.AcceptInvalidNumber,
                     new WaitForSelectorOptions
                     {
                         Visible = true, 
-                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)
+                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(2).TotalMilliseconds)
                     });
 
-				return false;
-			}
-			catch (Exception)
-			{
-				return true;
-			}
-		}
+                return false;
+            }
+            catch (Exception)
+            {
+                return true;
+            }
+        }
         
         public static async Task<bool> CheckPageIntegrity(Page page)
         {

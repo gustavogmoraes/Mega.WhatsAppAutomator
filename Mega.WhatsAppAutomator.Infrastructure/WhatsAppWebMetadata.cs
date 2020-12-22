@@ -9,11 +9,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public const string MessageLine = "vW7d1";
         public static string ChatContainer = ".tSmQ1";
         public static string ChatInput = "._1awRl";
-        public static string SendMessageButton = "._1U1xa";
+        public static string SendMessageButton = "._2Ujuu";
 		public static string SelectorMainDiv = "#app > div > div > div.landing-window > div.landing-main";
         public static string Unread = "._31gEB";
         public static string SelectorChatInput = "#main > footer > div._3ee1T._1LkpH.copyable-area > div._3uMse > div > div._3FRCZ.copyable-text.selectable-text";
-        public static string AcceptInvalidNumber = "#app > div > span:nth-child(2) > div > span > div > div > div > div > div > div._2LPYs > div";
+        public static string AcceptInvalidNumber = "._2XHG4";
         public static string NotCurrentTab = "#app > div > div > div > div > div > div > div._2LPYs > div.S7_rT.FV2Qy";
         public static string SendMessageExpression(string number) =>
             "var link = document.createElement('a');\n" +

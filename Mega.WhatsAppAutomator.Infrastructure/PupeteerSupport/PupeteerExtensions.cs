@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -77,6 +78,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 await page.WaitForSelectorAsync(elementSelector);
                 
                 var element = await page.QuerySelectorAsync(elementSelector);
+                await element.ClickAsync();
+                Thread.Sleep(100);
                 await element.TypeAsync(text, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
                 
                 return;

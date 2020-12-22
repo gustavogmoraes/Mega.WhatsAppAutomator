@@ -187,11 +187,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
                 return;
             }
-            
-            // WriteOnConsole("Test");
-            // Console.SetCursorPosition(0, Console.CursorTop - 1);
-            // ClearCurrentConsoleLine();
-            
+
             Idle();
         }
 
@@ -199,15 +195,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             if (!string.IsNullOrEmpty(LastWrittenLine) && LastWrittenLine.Contains("Got no messages to send"))
             {
-                if (!PupeteerMetadata.AmIRunningInDocker)
-                {
-                    Console.SetCursorPosition(0, Console.CursorTop - 1);
-                }
-                
                 ClearCurrentConsoleLine();
-                WriteOnConsole($"{DateTime.UtcNow.ToBraziliaDateTime()} ˜ {LastTimeThatIdled} " +
-                               $"Got no messages to send, idling for {ClientConfiguration.IdleTime} seconds... " +
-                               $"Total time idling: {_totalIdleTime.TimeSpanToReport()}");
+                WriteOnConsole(GetIdlingReportLine());
                 
                 _totalIdleTime = _totalIdleTime.Add(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
                 LastTimeThatIdled = DateTime.UtcNow.ToBraziliaDateTime();
@@ -221,6 +210,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             LastTimeThatIdled = DateTime.UtcNow.ToBraziliaDateTime();
             
             Thread.Sleep(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
+        }
+
+        private static string GetIdlingReportLine()
+        {
+            var currentTime = DateTime.UtcNow.ToBraziliaDateTime().RemoveDateConvertingToString();
+            
+            return $"{LastTimeThatIdled} ˜ {currentTime} " +
+                   $"Got no messages to send, idling for {ClientConfiguration.IdleTime} seconds... " +
+                   $"Total time idling: {_totalIdleTime.TimeSpanToReport()}";
         }
 
         private static string GetReportMessage(List<IGrouping<string, ToBeSent>> groupsOfMessagesByNumber, int toBeSentCount, int totalOfMessages, TimeSpan queryTime)
@@ -240,7 +238,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             foreach (var group in groupsOfMessagesByNumber)
             {
-                while (!(await WhatsAppWebTasks.CheckPageIntegrity(page)))
+                while (!await WhatsAppWebTasks.CheckPageIntegrity(page))
                 {
                     WriteOnConsole("\tPage integrity compromised, reloading...");
                     await page.ReloadAsync();
@@ -252,23 +250,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 var texts = group.Select(x => x.Message.Text).ToList();
                 var messages = group.ToList();
                 
-                // WriteOnConsole($"\t{DateTime.UtcNow.ToBraziliaDateTime()}: Writing {texts.Count} messages to number {number}");
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
                 
                 WhatsAppWebTasks.TreatStrangeNumbers(ref number);
                 
-                //WriteOnConsole("Checking if number exists");
+                //// During the number exists query, the chat page with the number is already opened
                 var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
                 if (!numberExists)
                 {
                     await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, messages);
                     RemoveNotSentMessages(messages);
-                    WriteOnConsole($"\tNumber {number} does not exist on WhatsApp, storing as not delivered");
+                    WriteOnConsole($"\t{DateTime.UtcNow.ToBraziliaDateTime()}: Number {number.NumberToReport()} does not exist on WhatsApp, storing as not delivered");
                 }
                 else
                 {
-                    await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
+                    var usedHumanizationMessages = await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
                     TickSentMessages(messages);
 
                     var totalLength = texts.Sum(x =>x.Length);
@@ -276,7 +273,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     WriteOnConsole(
                         $"\t{DateTime.UtcNow.ToBraziliaDateTime()}: " +
                              $"Sent {texts.Count} messages with total length of {totalLength} characters to number " +
-                             $"{number.NumberToReport()} in {stopwatch.Elapsed.TimeSpanToReport()}");
+                             $"{number.NumberToReport()} in {stopwatch.Elapsed.TimeSpanToReport()} {(usedHumanizationMessages ? "(Used humanization messages)" : string.Empty)}");
                 }
 
                 if (stopwatch.IsRunning)
