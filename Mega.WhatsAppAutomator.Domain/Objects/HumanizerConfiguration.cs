@@ -30,5 +30,7 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
 		public int MinimumMessageTypingDelay { get; set; }
 		
 		public int MaximumMessageTypingDelay { get; set; }
+		public int MinimumDelayAfterFarewell { get; set; }			
+		public int MaximumDelayAfterFarewell { get; set; }
 	}
 }

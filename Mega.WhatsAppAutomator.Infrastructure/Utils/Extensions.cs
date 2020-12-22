@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Domain.Interfaces;
 using Mega.WhatsAppAutomator.Domain.Objects;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
+using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Raven.Client.Documents;
@@ -86,6 +87,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 		public static DateTime ToBraziliaDateTime(this DateTime dateTime)
 		{
 			return TimeZoneInfo.ConvertTimeFromUtc(dateTime, BraziliaTimeZone);
+		}
+		
+		public static string RemoveDateConvertingToString(this DateTime dateTime)
+		{
+			return dateTime.ToString("hh:mm:ss");
 		}
 
 		private static TimeZoneInfo BraziliaTimeZone { get; set; }
@@ -352,6 +358,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 		
 		public static void ClearCurrentConsoleLine()
 		{
+			Console.SetCursorPosition(0, Console.CursorTop - 1);
+				
 			int currentLineCursor = Console.CursorTop;
 			Console.SetCursorPosition(0, Console.CursorTop);
 			Console.Write(new string(' ', Console.WindowWidth)); 
@@ -370,26 +378,36 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 
 		public static string NumberToReport(this string number)
 		{
+			number = number.Replace("-", string.Empty);
+			number = number.Trim();
+			
 			var countryCode = number.Substring(0, 3);
 			var areaCode = number.Substring(3, 2);
 			
-			var realNumber = number.Split(countryCode + areaCode).LastOrDefault();
-
-			if (realNumber[0] == '9' && realNumber[1] == '9')
+			var realNumber = number.Split(countryCode + areaCode).Last();
+			if (number.ContainsBrazilian9ThDigit())
 			{
-				realNumber = realNumber.Substring(0, 4) + "-" + realNumber.Substring(4);
-				//  Do nothing
+				return $"{countryCode} {areaCode} {realNumber.Insert(5, "-")}";
 			}
 
-			else if (realNumber[0] == '9' || realNumber.Length != 8)
-			{
-				return $"{countryCode} {areaCode} {realNumber.Substring(0,5)}-{realNumber.Substring(5)}";
-			}
+			number = number.InsertBrazilian9ThDigit();
+			realNumber = number.Split(countryCode + areaCode).Last();
+			return $"{countryCode} {areaCode} {realNumber.Insert(5, "-")}";
+		}
 
-			realNumber = '9' + realNumber;
-			realNumber = realNumber.Substring(0, 5) + "-" + realNumber.Substring(5);
+		public static bool ContainsBrazilian9ThDigit(this string number)
+		{
+			return number.Length > 13 && number[6] == '9';
+		}
 
-			return $"{countryCode} {areaCode} {realNumber}";
+		public static string RemoveBrazilian9ThDigit(this string number)
+		{
+			return number.Remove(5, 1);
+		}
+        
+		public static string InsertBrazilian9ThDigit(this string number)
+		{
+			return number.Insert(5, "9");
 		}
 	}
 }
