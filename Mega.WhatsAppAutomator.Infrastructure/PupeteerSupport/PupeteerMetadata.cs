@@ -88,7 +88,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                     return userDataDirPath;
                 }
                 
-                Thread.Sleep(TimeSpan.FromSeconds(1));
+                Thread.Sleep(TimeSpan.FromSeconds(2));
                 WriteOnConsole("Downloading user data file");
                 
                 var attachment = DownloadUserDataFileFromDataBase();

@@ -79,7 +79,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 
                 var element = await page.QuerySelectorAsync(elementSelector);
                 await element.ClickAsync();
-                Thread.Sleep(100);
+                Thread.Sleep(500);
                 await element.TypeAsync(text, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
                 
                 return;
