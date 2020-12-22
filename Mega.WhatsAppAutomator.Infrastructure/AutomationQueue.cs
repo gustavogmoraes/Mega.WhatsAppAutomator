@@ -195,7 +195,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             if (!string.IsNullOrEmpty(LastWrittenLine) && LastWrittenLine.Contains("Got no messages to send"))
             {
-                ClearCurrentConsoleLine();
+                //ClearCurrentConsoleLine();
                 WriteOnConsole(GetIdlingReportLine());
                 
                 _totalIdleTime = _totalIdleTime.Add(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
@@ -228,7 +228,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                    $"Number of gotten messages: {totalOfMessages}\n" +
                    $"Total of groups: {groupsOfMessagesByNumber.Count}\n" +
                    $"Number of messages remaining to be sent: {toBeSentCount}\n" +
-                   $"Request time: {queryTime.TimeSpanToReport()}\n";
+                   $"Request time: {queryTime.TimeSpanToReport(true)}";
         }
 
         private static async Task SendGroupOfMessagesByNumber(Page page, List<IGrouping<string,ToBeSent>> groupsOfMessagesByNumber)
@@ -255,7 +255,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 
                 WhatsAppWebTasks.TreatStrangeNumbers(ref number);
                 
-                //// During the number exists query, the chat page with the number is already opened
+                //// During the number exists JS expression evaluation, the chat page with the number is already opened
                 var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
                 if (!numberExists)
                 {
@@ -272,7 +272,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     stopwatch.Stop();
                     WriteOnConsole(
                         $"\t{DateTime.UtcNow.ToBraziliaDateTime()}: " +
-                             $"Sent {texts.Count} messages with total length of {totalLength} characters to number " +
+                             $"Sent {texts.Count.ToString().PadLeft(3, ' ')} messages with total length of {totalLength.ToString().PadLeft(5, ' ')} characters to number " +
                              $"{number.NumberToReport()} in {stopwatch.Elapsed.TimeSpanToReport()} {(usedHumanizationMessages ? "(Used humanization messages)" : string.Empty)}");
                 }
 
@@ -284,7 +284,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
             
             outerStopwatch.Stop();
-            WriteOnConsole($"{DateTime.UtcNow.ToBraziliaDateTime()}, sent group of messages in {outerStopwatch.Elapsed.TimeSpanToReport()}\n");
+            WriteOnConsole($"{DateTime.UtcNow.ToBraziliaDateTime()}, sent group of {groupsOfMessagesByNumber.Count} messages in {outerStopwatch.Elapsed.TimeSpanToReport()}");
         }
 
         private static void RemoveNotSentMessages(List<ToBeSent> messages)

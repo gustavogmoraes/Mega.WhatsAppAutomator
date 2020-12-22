@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Domain.Objects;
@@ -210,7 +211,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         private static IList<string> GetCollaboratorNumbers()
         {
-            return Humanizer.CollaboratorsContacts;
+            var contactsOnDatabase = Humanizer.CollaboratorsContacts;
+            var immutableCount = contactsOnDatabase.Count;
+
+            for (int i = 0; i < immutableCount; i++)
+            {
+                contactsOnDatabase.Add(contactsOnDatabase[i].InsertBrazilian9ThDigit());
+                contactsOnDatabase.Add(contactsOnDatabase[i].RemoveBrazilian9ThDigit());
+            }
+
+            return contactsOnDatabase.Distinct().ToList();
         }
 
 		public static async Task<bool> CheckIfNumberExists(Page page, string number)
@@ -246,7 +256,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     new WaitForSelectorOptions
                     {
                         Visible = true, 
-                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(2).TotalMilliseconds)
+                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(4).TotalMilliseconds)
                     });
 
                 return false;
