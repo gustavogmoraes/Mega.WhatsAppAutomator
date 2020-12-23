@@ -201,7 +201,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 				   where id() in ({ids}) 
 				   update 
 				   {{	
-						x.{propertyInfo.Name} = {valueToBePut.ToString().ToLowerInvariant()}; 
+						x.{propertyInfo.Name} = {valueToBePut.ToString()?.ToLowerInvariant()}; 
 				   }}";
 			
 			var operation = documentStore
