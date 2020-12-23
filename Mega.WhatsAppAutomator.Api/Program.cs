@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Mega.WhatsAppAutomator.Infrastructure;
 using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Mega.WhatsAppAutomator.Api
 {
@@ -16,13 +17,18 @@ namespace Mega.WhatsAppAutomator.Api
     {
         public static void Main(string[] args)
         {
-            // Sets running configs based on environment variables for Docker or development IDE
-            // and based on args for dll running via "dotnet" command on CLI
+            //// Sets running configs based on environment variables for Docker or development IDE
+            //// and based on args for dll running via "dotnet" command on CLI
             SetRunningConfiguration(args);
             
             var apiHost = CreateHostBuilder(args).Build();
-
-            // Creates automation
+            
+            var appLifetime = apiHost.Services.GetRequiredService<IHostApplicationLifetime>();
+            
+            //// Exit application by graceful exit -> Watchtower
+            appLifetime.ApplicationStopping.Register(AutomationStartup.ExitApplication);
+            
+            //// Creates automation
             _ = AutomationStartup.Start();
 
             apiHost.Run();
