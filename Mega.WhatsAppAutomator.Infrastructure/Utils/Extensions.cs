@@ -146,18 +146,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 			return list.ElementAt(random.Next(0, list.Count));
 		}
 
+		private static string GetPaddedTimeSpan(this TimeSpan ts, int widht = 3)
+		{
+			return ts.Milliseconds.ToString().PadLeft(widht, '0');
+		}
+
 		public static string TimeSpanToReport(this TimeSpan ts, bool considerMs = false)
 		{
-			var ms = (considerMs ? $":{ts.Milliseconds}" : string.Empty);
-
 			var stringResult = new DateTime(ts.Ticks).ToString("mm:ss");
+			var msToReport = considerMs ? $":{ts.GetPaddedTimeSpan()}" : string.Empty;
 			
-			return stringResult + ms;
+			return stringResult + msToReport;
 		}
 
 		public static void SaveStreamAsFile(this Stream inputStream, string filePath)
 		{
-			using FileStream outputFileStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite);
+			using var outputFileStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite);
 
 			inputStream.CopyTo(outputFileStream);
 		}
@@ -165,17 +169,18 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 		public static string GetReadableFileSize(this long length)
 		{
 			string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-			double len = Convert.ToDouble(length);
-			int order = 0;
+			var len = Convert.ToDouble(length);
+			var order = 0;
+			
 			while (len >= 1024 && order < sizes.Length - 1)
 			{
 				order++;
-				len = len / 1024;
+				len /= 1024;
 			}
 
 			// Adjust the format string to your preferences. For example "{0:0.#}{1}" would
 			// show a single decimal place, and no space.
-			return string.Format("{0:0.##} {1}", len, sizes[order]);
+			return $"{len:0.##} {sizes[order]}";
 		}
 
 		public static void BulkUpdate<T>(this IDocumentStore documentStore, IList<T> items)
@@ -210,7 +215,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 		{
 			MemberExpression Exp = null;
 
-			//this line is necessary, because sometimes the expression comes in as Convert(originalexpression)
+			//this line is necessary, because sometimes the expression comes in as Convert(originalExpression)
 			if (propertyLambda.Body is UnaryExpression)
 			{
 				var UnExp = (UnaryExpression)propertyLambda.Body;
