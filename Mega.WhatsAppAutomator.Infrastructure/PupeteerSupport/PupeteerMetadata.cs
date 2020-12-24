@@ -89,7 +89,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 }
                 
                 Thread.Sleep(TimeSpan.FromSeconds(2));
-                WriteOnConsole("Downloading user data file");
+                WriteOnConsole("Trying to download user-data file");
                 
                 var attachment = DownloadUserDataFileFromDataBase();
                 if (attachment != null)
@@ -189,7 +189,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 return Path.Combine(FetcherDownloadPath, $@"{winFolder}/chrome-win/Chrome.exe");
             }
 
-            throw new NotImplementedException();
+            throw new Exception("OS not compatible");
         }
     }
 }
