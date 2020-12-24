@@ -148,7 +148,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 
 		private static string GetPaddedTimeSpan(this TimeSpan ts, int widht = 3)
 		{
-			return ts.Milliseconds.ToString().PadLeft(widht, '0');
+			return ts.Milliseconds < 2 
+				? 1.ToString().PadLeft(widht, '0') 
+				: ts.Milliseconds.ToString().PadLeft(widht, '0');
 		}
 
 		public static string TimeSpanToReport(this TimeSpan ts, bool considerMs = false)

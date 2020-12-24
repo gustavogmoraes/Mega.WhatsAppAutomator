@@ -175,7 +175,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static async Task SendMessagesGroupingByNumber()
         {
             var (groupsOfMessagesByNumber, totalOfGottenMessages) = 
-                await ExecuteWithElapsedTime(async () => await GetMessagesToBeSentByGroupAsync(), out var queryTime);
+                await ExecuteWithElapsedTime(async () => 
+                    await GetMessagesToBeSentByGroupAsync(), out var queryTime);
             var toBeSentCount = await GetToBeSentCount();
 
             if (groupsOfMessagesByNumber.Count > 0)
