@@ -38,6 +38,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         public static void StartQueue(Page page)
         {
+            ReadyToBeShutdown = false;
             Page = page;
             _totalIdleTime = new TimeSpan();
             
@@ -152,7 +153,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 await Page.Browser.CloseAsync();
                 Thread.Sleep(TimeSpan.FromSeconds(3));
                 SaveChromeUserData();
-                Environment.Exit(0);
+                ReadyToBeShutdown = true;
             }
             catch (Exception e)
             {
@@ -442,6 +443,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             EntryTime = x.EntryTime,
             TimeSent = DateTime.UtcNow.ToBraziliaDateTime()
         };
+
+        public static bool ReadyToBeShutdown { get; set; }
 
         private static List<ToBeSent> QueryToBeSentByThisNumber(string number)
         {

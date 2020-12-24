@@ -40,8 +40,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         }
         public static void ExitApplication()
         {
-            WriteOnConsole("Received stop request, after the running cycle the application will stop");
-            AutomationQueue.StopBrowser = true;
+            Task.Run(() =>
+            {
+                WriteOnConsole("Received stop request, after the running cycle the application will stop");
+                AutomationQueue.StopBrowser = true;
+            });
+
+            while (!AutomationQueue.ReadyToBeShutdown)
+            {
+                return;
+            }
         }
         
         public static async Task Start()

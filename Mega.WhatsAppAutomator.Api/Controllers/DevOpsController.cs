@@ -35,7 +35,7 @@ namespace Mega.WhatsAppAutomator.Api.Controllers
         public ActionResult Exit()
         {
             AutomationStartup.ExitApplication();
-
+            Environment.Exit(0);
             return Ok();
         }
     }
