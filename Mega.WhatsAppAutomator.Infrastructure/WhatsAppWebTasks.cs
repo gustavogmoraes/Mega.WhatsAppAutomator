@@ -223,6 +223,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
 		public static async Task<bool> CheckIfNumberExists(Page page, string number)
         {
+            if (string.IsNullOrEmpty(number))
+            {
+                throw new ArgumentNullException("Number null");
+            }
+
+            if (number.Length < 8)
+            {
+                return false;
+            }
+            
             //// Just to guarantee
             number = number.Trim();
             var doesExist = await CheckIfNumberExistsInternal(page, number);
@@ -234,12 +244,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             //// Trying the number with and without the brazilian 9th digit
             if (number.ContainsBrazilian9ThDigit())
             {
-                var numberWithout9ThDigit = number.RemoveBrazilian9ThDigit();
+                var numberWithout9ThDigit = await Task.Run(() => number.RemoveBrazilian9ThDigit()) ;
                 number = numberWithout9ThDigit;
                 return await CheckIfNumberExistsInternal(page, numberWithout9ThDigit);
             }
 
-            var numberWith9ThDigit = number.InsertBrazilian9ThDigit();
+            var numberWith9ThDigit = await Task.Run(() =>number.InsertBrazilian9ThDigit());
             number = numberWith9ThDigit;
             return await CheckIfNumberExistsInternal(page, numberWith9ThDigit);
         }

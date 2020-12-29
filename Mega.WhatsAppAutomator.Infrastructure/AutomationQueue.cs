@@ -43,7 +43,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             _totalIdleTime = new TimeSpan();
             
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
-            //StopBrowser = false;
+            StopBrowser = false;
             try
             {
                 Task.Run(async () => await QueueExecution());
@@ -53,8 +53,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 WriteOnConsole(e.Message);
                 throw;
             }
-
-            //Task.Run(async () => await TimeToRestart());
         }
 
         private static async Task<List<ToBeSent>> GetReturnListAsync()
@@ -135,7 +133,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 while (!StopBrowser)
                 {
-                    //TO DO: After x cycles, clean messages on Whatsapp
+                    //TODO: After x cycles, clean messages on Whatsapp
                     GetAndSetClientConfig();
                     
                     if (ClientConfiguration.SendMessagesGroupedByNumber)

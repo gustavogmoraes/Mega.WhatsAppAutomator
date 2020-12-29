@@ -13,6 +13,7 @@ using System.Security;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Domain.Interfaces;
 using Mega.WhatsAppAutomator.Domain.Objects;
@@ -409,11 +410,21 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 
 		public static string RemoveBrazilian9ThDigit(this string number)
 		{
+			if (number == null || number.Length < 8)
+			{
+				throw new ArgumentException("Invalid number");
+			}
+
 			return number.Remove(5, 1);
 		}
         
 		public static string InsertBrazilian9ThDigit(this string number)
 		{
+			if (number == null || number.Length < 5)
+			{
+				throw new ArgumentException("Invalid number");
+			}
+			
 			return number.Insert(5, "9");
 		}
 	}
