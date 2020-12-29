@@ -412,7 +412,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 		{
 			if (number == null || number.Length < 8)
 			{
-				throw new ArgumentException("Invalid number");
+				return number;
 			}
 
 			return number.Remove(5, 1);
@@ -420,9 +420,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
         
 		public static string InsertBrazilian9ThDigit(this string number)
 		{
-			if (number == null || number.Length < 5)
+			if (number == null || number.Length < 8)
 			{
-				throw new ArgumentException("Invalid number");
+				return number;
 			}
 			
 			return number.Insert(5, "9");

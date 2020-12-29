@@ -223,16 +223,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
 		public static async Task<bool> CheckIfNumberExists(Page page, string number)
         {
-            if (string.IsNullOrEmpty(number))
-            {
-                throw new ArgumentNullException("Number null");
-            }
-
-            if (number.Length < 8)
+            if (string.IsNullOrEmpty(number) || number.Length < 8)
             {
                 return false;
             }
-            
+
             //// Just to guarantee
             number = number.Trim();
             var doesExist = await CheckIfNumberExistsInternal(page, number);
