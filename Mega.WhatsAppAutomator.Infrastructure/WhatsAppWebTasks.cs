@@ -43,9 +43,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             var random = new Random();
 
-            var useHumanizationMessages =  
-                randommicallyDisableHumanization ? RandomBoolean(random)
-                : ShouldUseHumanizationMessages(number);
+            var useHumanizationMessages = ShouldUseHumanizationMessages(number) && randommicallyDisableHumanization && RandomBoolean(random);
 
             // Greetings
             if (useHumanizationMessages) { await SendGreetings(page, random); }
