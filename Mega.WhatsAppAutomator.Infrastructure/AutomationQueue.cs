@@ -35,7 +35,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             ReadyToBeShutdown = false;
             Page = page;
-            _totalIdleTime = new TimeSpan();
+            TotalIdleTime = new TimeSpan();
             
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
 
@@ -165,7 +165,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 .CountAsync();
         }
         
-        private static TimeSpan _totalIdleTime { get; set; }
+        private static TimeSpan TotalIdleTime { get; set; }
             
         private static async Task SendMessagesGroupingByNumber()
         {
@@ -176,7 +176,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             if (groupsOfMessagesByNumber.Count > 0)
             {
-                _totalIdleTime = new TimeSpan();
+                TotalIdleTime = new TimeSpan();
                 LastWrittenLine = null;
                 WriteOnConsole(GetReportMessage(groupsOfMessagesByNumber, toBeSentCount, totalOfGottenMessages, queryTime));
                 
@@ -195,7 +195,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 //ClearCurrentConsoleLine();
                 WriteOnConsole(GetIdlingReportLine());
                 
-                _totalIdleTime = _totalIdleTime.Add(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
+                TotalIdleTime = TotalIdleTime.Add(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
                 LastTimeThatIdled = DateTime.UtcNow.ToBraziliaDateTime();
                 Thread.Sleep(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
 
@@ -215,7 +215,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             return $"{LastTimeThatIdled} ˜ {currentTime} " +
                    $"Got no messages to send, idling for {ClientConfiguration.IdleTime} seconds... " +
-                   $"Total time idling: {_totalIdleTime.TimeSpanToReport()}";
+                   $"Total time idling: {TotalIdleTime.TimeSpanToReport()}";
         }
 
         private static string GetReportMessage(List<IGrouping<string, ToBeSent>> groupsOfMessagesByNumber, int toBeSentCount, int totalOfMessages, TimeSpan queryTime)
@@ -254,8 +254,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 
                 //// During the number exists JS expression evaluation, the chat page with the n"umber is already opened
                 var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
-                var str = numberExists ? "exists" : "NOT exists";
-                WriteOnConsole($"Number {str}");
                 if (!numberExists)
                 {
                     await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, messages);
@@ -264,7 +262,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 }
                 else
                 {
-                    WriteOnConsole($"Writing");
                     var usedHumanizationMessages = await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
                     TickSentMessages(messages);
 

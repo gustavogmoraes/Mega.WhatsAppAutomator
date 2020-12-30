@@ -45,8 +45,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             var random = new Random();
 
             var useHumanizationMessages = ShouldUseHumanizationMessages(number) && randommicallyDisableHumanization && RandomBoolean();
-            var str = useHumanizationMessages ? "Will" : "WONT";
-            WriteOnConsole($" {str} use humanization");
             // Greetings
             if (useHumanizationMessages) { await SendGreetings(page, random); }
 
@@ -104,12 +102,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         private static async Task OpenChat(Page page, string number)
         {
-            WriteOnConsole("Opening chat");
             var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(number);
             await page.EvaluateExpressionAsync(openChatExpression);
-            
-            WriteOnConsole("Opened");
-            
+
             Thread.Sleep(500);
         }
         private static async Task SendHumanizedMessage(Page page, string messageText, string number)
@@ -215,8 +210,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         private static IList<string> GetCollaboratorNumbers()
         {
-            WriteOnConsole("Getting collabs numbers");
-            
             var contactsOnDatabase = Humanizer.CollaboratorsContacts.GetCopy();
             var immutableCount = contactsOnDatabase.Count;
             

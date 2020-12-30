@@ -6,11 +6,6 @@ using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using PuppeteerSharp;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
-using Mega.WhatsAppAutomator.Infrastructure.TextNow;
-using Mega.WhatsAppAutomator.Infrastructure.Utils;
-using PuppeteerSharp.Contrib.Extensions;
-using PuppeteerSharp.Mobile;
-using System.Linq.Expressions;
 using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
@@ -122,9 +117,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 				return true;
 			}
 		}
-
-
-
+        
         private static async Task NavigateToWhatsAppWebPage(Page page)
         {
             await page.SetViewportAsync(new ViewPortOptions
