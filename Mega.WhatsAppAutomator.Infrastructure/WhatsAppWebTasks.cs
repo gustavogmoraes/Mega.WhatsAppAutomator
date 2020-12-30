@@ -224,8 +224,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
 		public static async Task<bool> CheckIfNumberExists(Page page, string number)
         {
-            WriteOnConsole($"Checking if number exists {number}");
-            
             if (string.IsNullOrEmpty(number) || number.Length < 8)
             {
                 return false;
@@ -277,8 +275,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         public static async Task<bool> CheckPageIntegrity(Page page)
         {
-            WriteOnConsole("Checking page integrity");
-            
             try
             {
                 var waitOptions = new WaitForSelectorOptions
