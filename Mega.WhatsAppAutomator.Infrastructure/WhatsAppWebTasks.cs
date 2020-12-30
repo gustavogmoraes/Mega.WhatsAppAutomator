@@ -16,7 +16,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
     {
         private static HumanizerConfiguration Humanizer { get; set; }
         
-        public static async Task SendMessage(Page page, Message message)
+        public static async Task<bool> SendMessage(Page page, Message message)
         {
             var messageNumber = message.Number;
             TreatStrangeNumbers(ref messageNumber);
@@ -27,10 +27,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 			{
                 await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
 				await StoreNotDeliveredMessage(message);
-				return;
+				return false;
 			}
 
 			await SendHumanizedMessage(page, message.Text, messageNumber);
+            return true;
         }
 
         public static async Task<bool> SendMessageGroupedByNumber(Page page, string number, List<string> listOfTexts)
@@ -43,8 +44,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             var random = new Random();
 
-            var useHumanizationMessages = ShouldUseHumanizationMessages(number) && randommicallyDisableHumanization && RandomBoolean(random);
-
+            var useHumanizationMessages = ShouldUseHumanizationMessages(number) && randommicallyDisableHumanization && RandomBoolean();
+            var str = useHumanizationMessages ? "Will" : "WONT";
+            WriteOnConsole($" {str} use humanization");
             // Greetings
             if (useHumanizationMessages) { await SendGreetings(page, random); }
 
@@ -60,9 +62,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return useHumanizationMessages;
         }
 
-        private static bool RandomBoolean(Random random)
+        private static bool RandomBoolean()
         {
-            return random.Next(2) == 0;
+            return new Random().Next(2) == 0;
         }
 
         private static bool ShouldUseHumanizationMessages(string number) =>
@@ -102,9 +104,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         private static async Task OpenChat(Page page, string number)
         {
+            WriteOnConsole("Opening chat");
             var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(number);
             await page.EvaluateExpressionAsync(openChatExpression);
-            Thread.Sleep(TimeSpan.FromSeconds(0.5));
+            
+            WriteOnConsole("Opened");
+            
+            Thread.Sleep(500);
         }
         private static async Task SendHumanizedMessage(Page page, string messageText, string number)
         {
@@ -143,7 +149,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task SendMessage(Page page, string messageText, Random random, bool sendAfterTyping = true, bool useHumanizer = false)
         {
-			await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
+			//await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
             await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatInput);
             Thread.Sleep(TimeSpan.FromSeconds(1));
             
@@ -209,9 +215,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         private static IList<string> GetCollaboratorNumbers()
         {
-            var contactsOnDatabase = Humanizer.CollaboratorsContacts;
+            WriteOnConsole("Getting collabs numbers");
+            
+            var contactsOnDatabase = Humanizer.CollaboratorsContacts.GetCopy();
             var immutableCount = contactsOnDatabase.Count;
-
+            
             for (int i = 0; i < immutableCount; i++)
             {
                 contactsOnDatabase.Add(contactsOnDatabase[i].InsertBrazilian9ThDigit());
@@ -223,6 +231,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
 		public static async Task<bool> CheckIfNumberExists(Page page, string number)
         {
+            WriteOnConsole($"Checking if number exists {number}");
+            
             if (string.IsNullOrEmpty(number) || number.Length < 8)
             {
                 return false;
@@ -239,12 +249,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             //// Trying the number with and without the brazilian 9th digit
             if (number.ContainsBrazilian9ThDigit())
             {
-                var numberWithout9ThDigit = await Task.Run(() => number.RemoveBrazilian9ThDigit()) ;
+                var numberWithout9ThDigit = number.RemoveBrazilian9ThDigit();
                 number = numberWithout9ThDigit;
                 return await CheckIfNumberExistsInternal(page, numberWithout9ThDigit);
             }
 
-            var numberWith9ThDigit = await Task.Run(() =>number.InsertBrazilian9ThDigit());
+            var numberWith9ThDigit = number.InsertBrazilian9ThDigit();
             number = numberWith9ThDigit;
             return await CheckIfNumberExistsInternal(page, numberWith9ThDigit);
         }
@@ -253,14 +263,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             try
             {
+                var waitOptions = new WaitForSelectorOptions
+                {
+                    Visible = true,
+                    Timeout = 4000,
+                    Hidden = false
+                };
+                
                 await OpenChat(page, number);
-                await page.WaitForSelectorAsync(
-                    WhatsAppWebMetadata.AcceptInvalidNumber,
-                    new WaitForSelectorOptions
-                    {
-                        Visible = true, 
-                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(4).TotalMilliseconds)
-                    });
+                WriteOnConsole($"Waiting for selector");
+                await page.WaitForSelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber, waitOptions);
 
                 return false;
             }
@@ -272,15 +284,17 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         public static async Task<bool> CheckPageIntegrity(Page page)
         {
+            WriteOnConsole("Checking page integrity");
+            
             try
-            { 
-                await page.WaitForSelectorAsync(
-                    WhatsAppWebMetadata.MainPanel,
-                    new WaitForSelectorOptions
-                    {
-                        Visible = true,
-                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(30).TotalMilliseconds)
-                    });
+            {
+                var waitOptions = new WaitForSelectorOptions
+                {
+                    Visible = true,
+                    Timeout = Convert.ToInt32(TimeSpan.FromSeconds(30).TotalMilliseconds)
+                };
+                
+                await page.WaitForSelectorAsync(WhatsAppWebMetadata.MainPanel, waitOptions);
 
                 return true;
             }

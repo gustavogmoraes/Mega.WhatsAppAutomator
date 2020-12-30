@@ -6,21 +6,16 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using PuppeteerSharp;
 using Mega.WhatsAppAutomator.Infrastructure.Objects;
-using System.Reflection;
 using Mega.WhatsAppAutomator.Domain.Objects;
-using Mega.WhatsAppAutomator.Infrastructure.Enums;
 using Mega.WhatsAppAutomator.Infrastructure.Persistence;
-using Mega.WhatsAppAutomator.Infrastructure.TextNow;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using Raven.Client.Documents;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
-using System.Security.AccessControl;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Raven.Client.Documents.Linq;
-using System.Text.RegularExpressions;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
@@ -43,9 +38,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             _totalIdleTime = new TimeSpan();
             
             TaskQueue ??= new ConcurrentQueue<WhatsAppWebTask>();
-            StopBrowser = false;
+
             try
-            {
+            { 
                 Task.Run(async () => await QueueExecution());
             }
             catch (Exception e)
@@ -71,7 +66,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return await session.Query<ToBeSent>()
                 .Where(x => x.CurrentlyProcessingOnAnotherInstance != true)
                 .OrderBy(x => x.EntryTime)
-                .Take(ClientConfiguration.MessagesPerCycle) // Note, if we use take and save changes on the same session, we remove the objects from the collection
+                .Take(ClientConfiguration.MessagesPerCycle)
+                //// Important note, if we use take and save changes on the same session, we remove the objects from the collection
                 .ToListAsync();
         }
 
@@ -92,10 +88,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             foreach (var x in returnList)
             {
-                using var session2 = Stores.MegaWhatsAppApi.OpenAsyncSession();
-                var tbS = await session2.LoadAsync<ToBeSent>(x.Id);
-                tbS.CurrentlyProcessingOnAnotherInstance = true;
-                await session2.SaveChangesAsync();
+                using var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
+                var toBeSent = await session.LoadAsync<ToBeSent>(x.Id);
+                toBeSent.CurrentlyProcessingOnAnotherInstance = true;
+
+                await session.SaveChangesAsync();
             }
 
             return returnList;
@@ -255,8 +252,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 
                 WhatsAppWebTasks.TreatStrangeNumbers(ref number);
                 
-                //// During the number exists JS expression evaluation, the chat page with the number is already opened
+                //// During the number exists JS expression evaluation, the chat page with the n"umber is already opened
                 var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
+                var str = numberExists ? "exists" : "NOT exists";
+                WriteOnConsole($"Number {str}");
                 if (!numberExists)
                 {
                     await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, messages);
@@ -265,6 +264,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 }
                 else
                 {
+                    WriteOnConsole($"Writing");
                     var usedHumanizationMessages = await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
                     TickSentMessages(messages);
 
@@ -272,14 +272,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     stopwatch.Stop();
                     WriteOnConsole(
                         $"\t{DateTime.UtcNow.ToBraziliaDateTime()}: " +
-                             $"Sent {texts.Count.ToString().PadLeft(3, ' ')} messages with total length of {totalLength.ToString().PadLeft(5, ' ')} characters to number " +
-                             $"{number.NumberToReport()} in {stopwatch.Elapsed.TimeSpanToReport()} {(usedHumanizationMessages ? "(Used humanization messages)" : string.Empty)}");
+                        $"Sent {texts.Count, 3} messages with total length of {totalLength, 5} characters to number " +
+                        $"{number.NumberToReport()} in {stopwatch.Elapsed.TimeSpanToReport()} {(usedHumanizationMessages ? "(Used humanization messages)" : string.Empty)}");
                 }
 
                 if (stopwatch.IsRunning)
                 {
                     stopwatch.Stop();
                 }
+
                 Thread.Sleep(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages));
             }
             
@@ -401,7 +402,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 count++;
                 var stp = new Stopwatch();
                 stp.Start();
-                await WhatsAppWebTasks.SendMessage(page, message.Message);
+                var didSend = await WhatsAppWebTasks.SendMessage(page, message.Message);
+                if (!didSend)
+                {
+                    stp.Stop();
+                    continue;
+                }
+                
                 if (!ClientConfiguration.HumanizerConfiguration.InsaneMode) { SleepRandomTimeBasedOnConfiguration(); }
                 stp.Stop();
                 
@@ -492,27 +499,5 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 
             WriteOnConsole($"Message to {message.Number} delegated via Mega.SmsAutomator");
         }
-
-        // private static async Task TimeToRestart()
-        // {
-        //     var configuration = GetRestartConfiguration();
-        //     var watch = new Stopwatch();
-        //     watch.Start();
-        //     while (watch.Elapsed < configuration.TimeToRestart)
-        //     {
-        //     }
-        //     StopBrowser = true;
-        //     Thread.Sleep(configuration.WaitTime);
-        //     Environment.Exit(0);
-        // }
-
-        // private static RestartConfiguration GetRestartConfiguration()
-        // {
-        //     using var session = Stores.MegaWhatsAppApi.OpenSession();
-        //     return session.Query<Client>()
-        //         .Where(x => x.Id == EnvironmentConfiguration.ClientId)
-        //         .Select(x => x.RestartConfiguration)
-        //         .FirstOrDefault();
-        // }
     }
 }

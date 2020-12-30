@@ -427,5 +427,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 			
 			return number.Insert(5, "9");
 		}
+
+		public static List<T> GetCopy<T>(this IList<T> iList)
+		{
+			var array = new T[iList.Count];
+			iList.CopyTo(array, 0);
+
+			return array.ToList();
+		}
 	}
 }

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Security.AccessControl;
 using System.Threading;
 using Mega.WhatsAppAutomator.Domain.Objects;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
@@ -13,20 +12,20 @@ using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
 using Raven.Client.Documents.Operations.Attachments;
 using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
-using Extensions = PuppeteerSharp.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 {
     public static class PupeteerMetadata
     {
-        public static string CustomUserAgentForHeadless => @"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36";
+        public static string CustomUserAgentForHeadless =>
+            @"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36";
 
         private static string[] CustomsArgsForHeadless => new []
         {
-            // "--proxy-server='direct://'",
-            // "--proxy-bypass-list=*",
-            // "--use-fake-ui-for-media-stream",
-            //"--disable-gpu",
+            "--proxy-server='direct://'",
+            "--proxy-bypass-list=*",
+            "--use-fake-ui-for-media-stream",
+            "--disable-gpu",
             "--log-level=3",
             "--no-default-browser-check",
             "--disable-infobars",

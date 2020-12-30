@@ -29,7 +29,7 @@ namespace Mega.WhatsAppAutomator.Api
             appLifetime.ApplicationStopping.Register(AutomationStartup.ExitApplication);
             
             //// Creates automation
-            _ = AutomationStartup.Start();
+            AutomationStartup.Start();
 
             apiHost.Run();
         }
