@@ -46,16 +46,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         // TODO: Review these and test, the less space we use to store data the better
         private static readonly string[] UserDataExceptions =
         {
-            @"Default\Web Data", 
-            @"Default\Login Data",
-            @"Default\Last Session",
-            @"Default\Cookies",
-            @"Default\Cookies-journal",
-            @"Default\Login Data-journal",
-            @"Default\Web Data-journal",
-            //@"Default\Cache", --> This is the space killer
-            @"Default\Code Cache",
-            @"Default\Local Storage" // --> This guy is the only necessary (I think, need further testing)
+            Path.Combine("Default", "Web Data"),
+            Path.Combine("Default","Login Data"),
+            Path.Combine("Default","Last Session"),
+            Path.Combine("Default","Cookies"),
+            Path.Combine("Default","Cookies-journal"),
+            Path.Combine("Default","Login Data-journal"),
+            Path.Combine("Default","Web Data-journal"),
+            //Path.Combine("Default", Cache"), --> This is the space killer
+            Path.Combine("Default", "Code Cache"),
+            Path.Combine("Default", "Local Storage") // --> This guy is the only necessary (I think, need further testing)
         };
 
         public static IList<string> UserDataDirDirectoriesAndFilesExceptionsToNotDelete =>

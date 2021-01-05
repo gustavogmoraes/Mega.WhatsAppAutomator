@@ -384,8 +384,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 new DirectoryInfo(browserFilesDir).GetPermission();
             }
             
-            WriteOnConsole("Now trying to delete everything");
+            WriteOnConsole("Now trying to delete browser files");
             Directory.Delete(browserFilesDir, true);
+            WriteOnConsole("Deleted");
         }
 
         private static async Task SendListOfMessages(Page page, List<ToBeSent> toBeSentMessages)
