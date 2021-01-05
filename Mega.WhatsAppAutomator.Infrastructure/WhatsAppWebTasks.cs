@@ -262,7 +262,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 };
                 
                 await OpenChat(page, number);
-                WriteOnConsole($"Waiting for selector");
                 await page.WaitForSelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber, waitOptions);
 
                 return false;

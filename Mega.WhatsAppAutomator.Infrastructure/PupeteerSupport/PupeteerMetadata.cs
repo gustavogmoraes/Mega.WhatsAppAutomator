@@ -42,19 +42,20 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             "--disable-setuid-sandbox",
             "--no-sandbox"
         };
-
+        
+        // TODO: Review these and test, the less space we use to store data the better
         private static readonly string[] UserDataExceptions =
         {
-            @"Default/Web Data", 
-            @"Default/Login Data",
-            @"Default/Last Session",
-            @"Default/Cookies",
-            @"Default/Cookies-journal",
-            @"Default/Login Data-journal",
-            @"Default/Web Data-journal",
-            @"Default/Cache",
-            @"Default/Code Cache",
-            @"Default/Local Storage"
+            @"Default\Web Data", 
+            @"Default\Login Data",
+            @"Default\Last Session",
+            @"Default\Cookies",
+            @"Default\Cookies-journal",
+            @"Default\Login Data-journal",
+            @"Default\Web Data-journal",
+            //@"Default\Cache", --> This is the space killer
+            @"Default\Code Cache",
+            @"Default\Local Storage" // --> This guy is the only necessary (I think, need further testing)
         };
 
         public static IList<string> UserDataDirDirectoriesAndFilesExceptionsToNotDelete =>

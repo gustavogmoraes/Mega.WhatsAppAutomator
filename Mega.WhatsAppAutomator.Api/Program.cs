@@ -27,6 +27,7 @@ namespace Mega.WhatsAppAutomator.Api
             
             //// Exit application by graceful exit -> Watchtower
             appLifetime.ApplicationStopping.Register(AutomationStartup.ExitApplication);
+            appLifetime.ApplicationStopped.Register(() => Extensions.WriteOnConsole("Application stopped"));
             
             //// Creates automation
             AutomationStartup.Start();
