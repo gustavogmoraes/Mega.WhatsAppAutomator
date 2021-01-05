@@ -42,6 +42,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             });
 
             while (!AutomationQueue.ReadyToBeShutdown) { }
+            WriteOnConsole("Application has been shut down gracefully");
         }
         
         public static async Task Start()
