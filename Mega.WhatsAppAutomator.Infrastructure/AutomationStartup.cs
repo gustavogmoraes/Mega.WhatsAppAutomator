@@ -41,7 +41,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 AutomationQueue.StopBrowser = true;
             });
 
-            while (!AutomationQueue.ReadyToBeShutdown) { }
+            while (!AutomationQueue.ReadyToBeShutdown)
+            {
+                WriteOnConsole("Not ready to shutdown");
+            }
             WriteOnConsole("Application has been shut down gracefully");
         }
         
