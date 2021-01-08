@@ -63,7 +63,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         public static async Task PasteOnElementAsync(this Page page, string elementSelector, string text)
         {
             var temp = await ClipboardService.GetTextAsync();
-            var pieces = text.Split(new string[] { "\r\n", "\n\r" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            var pieces = text.Split(new string[] { "\r\n", "\n\r" }, StringSplitOptions.None).ToList();
             var message = String.Join('\n', pieces);
             await ClipboardService.SetTextAsync(message);
             await page.FocusAsync(elementSelector);
@@ -84,8 +84,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 
                 return;
             }
-
-			var pieces = text.Split(new[] { "\r\n", "\n\r" }, StringSplitOptions.None).ToList();
+            
+            //TODO: Review these
+            var p1 = text.Split(new[] {"\r\n"}, StringSplitOptions.None).ToList();
+            var p2 = text.Split(new[] {"\n\r"}, StringSplitOptions.None).ToList();
+            
+			var pieces = p1.Concat(p2).ToList();
+            
 			foreach (var piece in pieces)
 			{
 				await page.WaitForSelectorAsync(elementSelector);
@@ -93,7 +98,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 				var element = await page.QuerySelectorAsync(elementSelector);
 				await element.TypeAsync(piece, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
 				
-				Thread.Sleep(50);
+				Thread.Sleep(100);
 
 				await page.PressShiftEnterAsync();
 			}

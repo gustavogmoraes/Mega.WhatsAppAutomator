@@ -11,7 +11,7 @@ namespace Mega.WhatsAppAutomator.Api.Controllers
     [ApiController]
     public class DevOpsController : Controller
     {
-        [HttpGet("[action]")]
+        [HttpGet("[action]")]    
         public ActionResult GetLastTakenQrCode() => 
             File(FileManagement.GetLastTakenQrCode(), "image/jpeg", "QrCode.jpg");
 
