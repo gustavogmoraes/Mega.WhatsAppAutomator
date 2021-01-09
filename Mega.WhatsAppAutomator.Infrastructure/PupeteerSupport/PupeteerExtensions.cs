@@ -86,14 +86,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             }
             
             //TODO: Review these
-            var p1 = text.Split(new[] {"\r\n"}, StringSplitOptions.None).ToList();
-            var p2 = text.Split(new[] {"\n\r"}, StringSplitOptions.None).ToList();
-            
-			var pieces = p1.Concat(p2).ToList();
+
+            text = text.Replace("\n\r", "\r\n");
+            var pieces = text.Split(new[] {"\r\n"}, StringSplitOptions.None)
+                .Select(x => x.Trim())
+                .ToList();
             
 			foreach (var piece in pieces)
 			{
-				await page.WaitForSelectorAsync(elementSelector);
+                await page.WaitForSelectorAsync(elementSelector);
 
 				var element = await page.QuerySelectorAsync(elementSelector);
 				await element.TypeAsync(piece, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
