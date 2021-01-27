@@ -28,6 +28,15 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         public static void AddTask(WhatsAppWebTask task)
         {
+            using var ravenSession = Stores.MegaWhatsAppApi.OpenAsyncSession();
+            var client = new Client();
+
+            var client1 = ravenSession.Query<Client>().Where(x => x.Nome.Contains("")).FirstOrDefault();
+            client1.Token = "";
+            
+            ravenSession.SaveChangesAsync();
+
+
             TaskQueue.Enqueue(task);
         }
 

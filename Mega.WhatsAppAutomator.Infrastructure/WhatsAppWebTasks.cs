@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Domain.Objects;
+using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
@@ -134,35 +135,48 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task SendFarewell(Page page, Random random)
         {
-            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.TypeOnElementAsync(
-                elementSelector: WhatsAppWebMetadata.ChatContainer, 
-                GetHumanizedFarewell(), 
-                delayInMs: random.Next(Humanizer.MinimumDelayAfterFarewell, Humanizer.MaximumDelayAfterFarewell));
-            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+            try
+            {
+                await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatInput);
+                await page.TypeOnElementAsync(
+                    elementSelector: WhatsAppWebMetadata.ChatInput,
+                    GetHumanizedFarewell(),
+                    delayInMs: random.Next(Humanizer.MinimumDelayAfterFarewell, Humanizer.MaximumDelayAfterFarewell));
+                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+            }
+            catch (Exception e)
+            {
+                DevOpsHelper.StoreFatalErrorAndRestart(e);
+            }
         }
 
         private static async Task SendMessage(Page page, string messageText, Random random, bool sendAfterTyping = true, bool useHumanizer = false)
         {
-			//await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatContainer);
-            await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatInput);
-            Thread.Sleep(TimeSpan.FromSeconds(1));
+            try
+            {
+                await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatInput);
+                Thread.Sleep(TimeSpan.FromSeconds(1));
             
-            var sendIstantaneouslly = Humanizer.InsaneMode || !useHumanizer;
-            var sendDelay = sendIstantaneouslly ? 0 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay);
+                var sendIstantaneouslly = Humanizer.InsaneMode || !useHumanizer;
+                var sendDelay = sendIstantaneouslly ? 0 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay);
 
-            await page.ClickAsync(WhatsAppWebMetadata.ChatContainer);
-			await page.TypeOnElementAsync(
-				elementSelector: WhatsAppWebMetadata.ChatContainer,
-				text: RandomSpaceBetweenWords(messageText),
-				delayInMs: sendDelay,
-				useParser: true);
+                await page.ClickAsync(WhatsAppWebMetadata.ChatInput);
+                await page.TypeOnElementAsync(
+                    elementSelector: WhatsAppWebMetadata.ChatInput,
+                    text: RandomSpaceBetweenWords(messageText),
+                    delayInMs: sendDelay,
+                    useParser: true);
             
-			if (sendAfterTyping)
-			{
-				await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-			}
-		}
+                if (sendAfterTyping)
+                {
+                    await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+                }
+            }
+            catch (Exception e)
+            {
+                DevOpsHelper.StoreFatalErrorAndRestart(e);
+            }
+        }
         
         private static async Task SendGroupOfMessages(Page page, List<string> texts, Random random, bool useHumanizationMessages = false)
         {
@@ -185,12 +199,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static async Task SendGreetings(Page page, Random random)
         {
-            await page.TypeOnElementAsync(
-                WhatsAppWebMetadata.ChatContainer,
-                GetHumanizedGreeting(),
-                random.Next(Humanizer.MinimumGreetingTypingDelay, Humanizer.MaximumGreetingTypingDelay));
-            await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
-            Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterGreeting, Humanizer.MaximumDelayAfterGreeting)));
+            try
+            {
+                await page.TypeOnElementAsync(
+                    WhatsAppWebMetadata.ChatInput,
+                    GetHumanizedGreeting(),
+                    random.Next(Humanizer.MinimumGreetingTypingDelay, Humanizer.MaximumGreetingTypingDelay));
+                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+                Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterGreeting, Humanizer.MaximumDelayAfterGreeting)));
+            }
+            catch (Exception e)
+            {
+                DevOpsHelper.StoreFatalErrorAndRestart(e);
+            }
         }
         
         private static string GetClientPresentation()

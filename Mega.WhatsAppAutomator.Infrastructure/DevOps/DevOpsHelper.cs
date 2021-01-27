@@ -1,7 +1,11 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
+using Mega.WhatsAppAutomator.Domain.Objects;
+using Mega.WhatsAppAutomator.Infrastructure.Persistence;
+using Mega.WhatsAppAutomator.Infrastructure.Utils;
 
 namespace Mega.WhatsAppAutomator.Infrastructure.DevOps
 {
@@ -73,6 +77,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure.DevOps
             {
                 // Process already exited.
             }
+        }
+        
+        public static void StoreFatalErrorAndRestart(Exception exception)
+        {
+            Logger.StoreError(new UntreatedError { Exception = exception });
+            
+            using var session = Stores.MegaWhatsAppApi.OpenSession();
+            var toBeSents = session.Query<ToBeSent>().ToList();
+            
+            Stores.MegaWhatsAppApi.BulkUpdate(toBeSents, x => x.CurrentlyProcessingOnAnotherInstance, false);
         }
     }
 }
