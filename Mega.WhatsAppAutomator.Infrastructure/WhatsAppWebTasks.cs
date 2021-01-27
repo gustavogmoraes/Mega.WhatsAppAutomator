@@ -9,6 +9,7 @@ using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
+using PuppeteerSharp.Input;
 using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
@@ -26,7 +27,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             if (!await CheckIfNumberExists(page, message.Number))
 			{
-                await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+                await page.ClickAsync(Config.WhatsAppWebMetadata.AcceptInvalidNumber);
 				await StoreNotDeliveredMessage(message);
 				return false;
 			}
@@ -73,7 +74,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         public static async Task DismissErrorAndStoreNotDelivereds(Page page, List<ToBeSent> intendeds)
         {
-            await page.ClickAsync(WhatsAppWebMetadata.AcceptInvalidNumber);
+            await page.ClickAsync(Config.WhatsAppWebMetadata.AcceptInvalidNumber);
             foreach (var intend in intendeds)
             {
                 await StoreNotDeliveredMessage(intend.Message);
@@ -137,12 +138,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             try
             {
-                await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatInput);
+                await page.WaitForSelectorAsync(Config.WhatsAppWebMetadata.ChatInput);
                 await page.TypeOnElementAsync(
-                    elementSelector: WhatsAppWebMetadata.ChatInput,
+                    elementSelector: Config.WhatsAppWebMetadata.ChatInput,
                     GetHumanizedFarewell(),
                     delayInMs: random.Next(Humanizer.MinimumDelayAfterFarewell, Humanizer.MaximumDelayAfterFarewell));
-                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+                await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.SendMessageButton);
             }
             catch (Exception e)
             {
@@ -154,22 +155,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             try
             {
-                await page.WaitForSelectorAsync(WhatsAppWebMetadata.ChatInput);
+                await page.WaitForSelectorAsync(Config.WhatsAppWebMetadata.ChatInput);
                 Thread.Sleep(TimeSpan.FromSeconds(1));
             
                 var sendIstantaneouslly = Humanizer.InsaneMode || !useHumanizer;
                 var sendDelay = sendIstantaneouslly ? 0 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay);
 
-                await page.ClickAsync(WhatsAppWebMetadata.ChatInput);
+                await page.ClickAsync(Config.WhatsAppWebMetadata.ChatInput);
                 await page.TypeOnElementAsync(
-                    elementSelector: WhatsAppWebMetadata.ChatInput,
+                    elementSelector: Config.WhatsAppWebMetadata.ChatInput,
                     text: RandomSpaceBetweenWords(messageText),
                     delayInMs: sendDelay,
                     useParser: true);
             
                 if (sendAfterTyping)
                 {
-                    await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+                    await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.SendMessageButton);
                 }
             }
             catch (Exception e)
@@ -194,7 +195,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 finalText += "\r\n";
             }
             
-            await SendMessage(page, finalText, random, useHumanizationMessages);
+            await SendMessage(page, finalText, random, useHumanizer: useHumanizationMessages);
         }
 
         private static async Task SendGreetings(Page page, Random random)
@@ -202,10 +203,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             try
             {
                 await page.TypeOnElementAsync(
-                    WhatsAppWebMetadata.ChatInput,
+                    Config.WhatsAppWebMetadata.ChatInput,
                     GetHumanizedGreeting(),
                     random.Next(Humanizer.MinimumGreetingTypingDelay, Humanizer.MaximumGreetingTypingDelay));
-                await page.ClickOnElementAsync(WhatsAppWebMetadata.SendMessageButton);
+                await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.SendMessageButton);
                 Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterGreeting, Humanizer.MaximumDelayAfterGreeting)));
             }
             catch (Exception e)
@@ -283,7 +284,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 };
                 
                 await OpenChat(page, number);
-                await page.WaitForSelectorAsync(WhatsAppWebMetadata.AcceptInvalidNumber, waitOptions);
+                await page.WaitForSelectorAsync(Config.WhatsAppWebMetadata.AcceptInvalidNumber, waitOptions);
 
                 return false;
             }
@@ -303,7 +304,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     Timeout = Convert.ToInt32(TimeSpan.FromSeconds(30).TotalMilliseconds)
                 };
                 
-                await page.WaitForSelectorAsync(WhatsAppWebMetadata.MainPanel, waitOptions);
+                await page.WaitForSelectorAsync(Config.WhatsAppWebMetadata.MainPanel, waitOptions);
 
                 return true;
             }

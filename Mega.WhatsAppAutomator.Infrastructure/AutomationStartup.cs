@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using PuppeteerSharp;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
+using Mega.WhatsAppAutomator.Infrastructure.Persistence;
+using Raven.Client.Documents;
 using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
@@ -62,8 +64,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             WriteOnConsole("Trying to launch");
             var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions());
-
             BrowserRef = browser;
+
+            await GetMetadata();
 
             var page = await browser.NewPageAsync();
             WriteOnConsole($"Launched, now going to page");
@@ -79,6 +82,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
 
             StartQueue(page);
+        }
+
+        private static async Task GetMetadata()
+        {
+            var session = Stores.MegaWhatsAppApi.OpenAsyncSession();
+            Config.WhatsAppWebMetadata = await session.Query<WhatsAppWebMetadata>().FirstOrDefaultAsync();
         }
 
         private static async Task WaitForSetup(Page page, TimeSpan timeout)
@@ -111,7 +120,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 		{
 			try
 			{
-				_ = await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
+				_ = await page.WaitForSelectorAsync(
+                    Config.WhatsAppWebMetadata.SelectorMainDiv, 
+                    new WaitForSelectorOptions
+                    {
+                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)
+                    });
 				return false;
 			}
 			catch (Exception)
@@ -132,7 +146,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             
             await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
             Thread.Sleep(TimeSpan.FromSeconds(2));
-            await page.GoToAsync(WhatsAppWebMetadata.WhatsAppURL);
+            await page.GoToAsync(Config.WhatsAppWebMetadata.WhatsAppUrl);
         }
         
         private static async Task NavigateToTextNowPage(Page page)
@@ -167,11 +181,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await page.ClickOnElementAsync("#passwordNext > div > button > div.VfPpkd-RLmnJb");
         }
 
-        public static async Task GetQrCode(Page page)
+        private static async Task GetQrCode(Page page)
         {
             WriteOnConsole("Getting QrCode");
             Thread.Sleep(5000);
-            await page.WaitForSelectorAsync(WhatsAppWebMetadata.SelectorMainDiv, new WaitForSelectorOptions { Timeout = (int?)Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds) });
+            await page.WaitForSelectorAsync(
+                Config.WhatsAppWebMetadata.SelectorMainDiv, 
+                new WaitForSelectorOptions
+                {
+                    Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)
+                });
             Thread.Sleep(TimeSpan.FromSeconds(3));
             if(!Directory.Exists(FileManagement.ScreenshotsDirectory))
             {
@@ -180,7 +199,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             var fileName = Path.Combine(FileManagement.ScreenshotsDirectory, "QrCode.jpg");
             WriteOnConsole($"Saved file at {fileName}");
-            await page.ScreenshotAsync(fileName, new ScreenshotOptions { Clip = await page.GetElementClipAsync(WhatsAppWebMetadata.SelectorMainDiv) });
+            await page.ScreenshotAsync(fileName, new ScreenshotOptions { Clip = await page.GetElementClipAsync(Config.WhatsAppWebMetadata.SelectorMainDiv) });
         }
     }
 }
