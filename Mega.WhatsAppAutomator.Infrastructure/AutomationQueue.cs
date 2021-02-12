@@ -220,11 +220,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static void ClearConsole()
         {
-            if (PupeteerMetadata.AmIRunningInDocker)
-            {
-                DevOpsHelper.Bash($@": > $(docker inspect --format='{{.LogPath}}' {Environment.MachineName})");
-                return;
-            }
+            // if (PupeteerMetadata.AmIRunningInDocker)
+            // {
+            //     DevOpsHelper.Bash($@": > $(docker inspect --format='{{.LogPath}}' {Environment.MachineName})");
+            //     return;
+            // }
             
             Console.Clear();
         }
