@@ -218,9 +218,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Thread.Sleep(TimeSpan.FromSeconds(ClientConfiguration.IdleTime));
         }
 
+        private static void ClearConsole()
+        {
+            if (PupeteerMetadata.AmIRunningInDocker)
+            {
+                DevOpsHelper.Bash($@": > $(docker inspect --format='{{.LogPath}}' {Environment.MachineName})");
+                return;
+            }
+            
+            Console.Clear();
+        }
+
         private static string GetIdlingReportLine()
         {
             var currentTime = DateTime.UtcNow.ToBraziliaDateTime().RemoveDateConvertingToString();
+
+            ClearConsole();
             
             return $"{LastTimeThatIdled} ˜ {currentTime} " +
                    $"Got no messages to send, idling for {ClientConfiguration.IdleTime} seconds... " +
