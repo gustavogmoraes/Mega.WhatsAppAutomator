@@ -86,7 +86,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             }
             
             //TODO: Review these
-
             text = text.Replace("\n\r", "\r\n");
             var pieces = text.Split(new[] {"\r\n"}, StringSplitOptions.None)
                 .Select(x => x.Trim())
@@ -97,9 +96,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 await page.WaitForSelectorAsync(elementSelector);
 
 				var element = await page.QuerySelectorAsync(elementSelector);
+                await element.ClickAsync();
 				await element.TypeAsync(piece, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
 				
-				Thread.Sleep(100);
+				Thread.Sleep(150);
 
 				await page.PressShiftEnterAsync();
 			}

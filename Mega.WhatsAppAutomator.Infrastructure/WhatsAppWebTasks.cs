@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -165,7 +166,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 await page.ClickAsync(Config.WhatsAppWebMetadata.ChatInput);
                 await page.TypeOnElementAsync(
                     elementSelector: Config.WhatsAppWebMetadata.ChatInput,
-                    text: RandomSpaceBetweenWords(messageText),
+                    text: GetTextWithRandomSpaceBetweenWords(messageText),
                     delayInMs: sendDelay,
                     useParser: true);
             
@@ -325,21 +326,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await session.SaveChangesAsync();
         }
 
-        private static string RandomSpaceBetweenWords(string messageText) 
+        private static string GetTextWithRandomSpaceBetweenWords(string messageText) 
         {
-            var space = new[] { " ", "  ", " ", "  ", " ", "  "};
-            var splitted = messageText.Split(" ");
-            
-            var resultado = string.Empty;
-            
-            foreach (var t in splitted)
-            {
-                resultado += (t == splitted.First() ? t : string.Empty) + t + space.Random();
-            }
-            
-            return resultado;
-        }
+            var spaceCollection = new[] { " ", "  "};
+            var separated = messageText.Split(" ")
+                .ToImmutableList();
 
-      
+            return separated.Aggregate(string.Empty, (current, message) => current + message + spaceCollection.Random());
+        }
     }
 }
