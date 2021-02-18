@@ -327,13 +327,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static string RandomSpaceBetweenWords(string messageText) 
         {
-            var space = new[] { " ", "  ", " ", " ", " ", " "};
-            var teste = messageText.Split(' ');
+            var space = new[] { " ", "  ", " ", "  ", " ", "  "};
+            var splitted = messageText.Split(" ");
+            
             var resultado = string.Empty;
-            foreach (var t in teste)
+            
+            foreach (var t in splitted)
             {
-                resultado += t + space.Random();
+                resultado += (t == splitted.First() ? t : string.Empty) + t + space.Random();
             }
+            
             return resultado;
         }
 
