@@ -157,9 +157,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 await page.WaitForSelectorAsync(Config.WhatsAppWebMetadata.ChatInput);
                 Thread.Sleep(TimeSpan.FromSeconds(1));
+                await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.ChatInput);
             
                 var sendIstantaneouslly = Humanizer.InsaneMode || !useHumanizer;
-                var sendDelay = sendIstantaneouslly ? 0 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay);
+                var sendDelay = sendIstantaneouslly ? 10 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay);
 
                 await page.ClickAsync(Config.WhatsAppWebMetadata.ChatInput);
                 await page.TypeOnElementAsync(

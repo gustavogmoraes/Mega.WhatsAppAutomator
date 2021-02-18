@@ -26,19 +26,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static Page Page { get; set; }
         private static ConcurrentQueue<WhatsAppWebTask> TaskQueue { get; set; }
 
-        public static void AddTask(WhatsAppWebTask task)
-        {
-            using var ravenSession = Stores.MegaWhatsAppApi.OpenAsyncSession();
-            var client = new Client();
-
-            var client1 = ravenSession.Query<Client>().Where(x => x.Nome.Contains("")).FirstOrDefault();
-            client1.Token = "";
-            
-            ravenSession.SaveChangesAsync();
-
-
-            TaskQueue.Enqueue(task);
-        }
+        public static void AddTask(WhatsAppWebTask task) => TaskQueue.Enqueue(task);
 
         public static void StartQueue(Page page)
         {
@@ -220,12 +208,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static void ClearConsole()
         {
-            // if (PupeteerMetadata.AmIRunningInDocker)
-            // {
-            //     DevOpsHelper.Bash($@": > $(docker inspect --format='{{.LogPath}}' {Environment.MachineName})");
-            //     return;
-            // }
-            
             Console.Clear();
         }
 
@@ -274,13 +256,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 
                 WhatsAppWebTasks.TreatStrangeNumbers(ref number);
                 
-                //// During the number exists JS expression evaluation, the chat page with the n"umber is already opened
+                //// During the number exists JS expression evaluation, the chat page with the number is already opened
                 var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
                 if (!numberExists)
                 {
                     await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, messages);
                     RemoveNotSentMessages(messages);
-                    WriteOnConsole($"\t{DateTime.UtcNow.ToBraziliaDateTime()}: Number {number.NumberToReport()} does not exist on WhatsApp, storing as not delivered");
+                    WriteOnConsole($"\t{DateTime.UtcNow.ToBraziliaDateTime()}: " +
+                                   $"Number {number.NumberToReport()} does not exist on WhatsApp, storing as not delivered");
                 }
                 else
                 {
