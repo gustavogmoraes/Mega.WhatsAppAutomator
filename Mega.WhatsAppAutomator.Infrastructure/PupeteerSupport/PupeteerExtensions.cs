@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Mega.WhatsAppAutomator.Domain.Objects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
@@ -71,44 +74,49 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             await ClipboardService.SetTextAsync(temp);
         }
         
-        public static async Task TypeOnElementAsync(this Page page, string elementSelector, string text, int? delayInMs = null, bool useParser = false)
+        public static async Task TypeOnElementAsync(
+            this Page page, 
+            string elementSelector, 
+            string text,
+            HumanizerConfiguration humanizer,
+            bool useParser = false)
         {
+            var element = await page.QuerySelectorAsync(elementSelector);
+            await element.ClickAsync();
+            
+            Thread.Sleep(500);
+            
             if (!useParser)
             {
-                await page.WaitForSelectorAsync(elementSelector);
-                
-                var element = await page.QuerySelectorAsync(elementSelector);
-                await element.ClickAsync();
-                Thread.Sleep(500);
-                await element.TypeAsync(text, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
+                await element.TypeAsync(text, new TypeOptions { Delay = GetRandomDelay(humanizer) });
                 
                 return;
             }
             
             //TODO: Review these
-            text = text.Replace("\n\r", "\r\n");
-            var pieces = text.Split(new[] {"\r\n"}, StringSplitOptions.None)
+            var newText = text.Replace("\n\r", "\r\n");
+            var pieces = newText.Split(new[] {"\r\n"}, StringSplitOptions.None)
                 .Select(x => x.Trim())
-                .ToList();
-            
-			foreach (var piece in pieces)
-			{
-                await page.WaitForSelectorAsync(elementSelector);
+                .ToImmutableList();
 
-				var element = await page.QuerySelectorAsync(elementSelector);
-                await element.ClickAsync();
-				await element.TypeAsync(piece, new TypeOptions { Delay = delayInMs ?? GetRandomDelay() });
-				
-				Thread.Sleep(150);
+            foreach (var piece in pieces)
+            {
+                var randomDelay = GetRandomDelay(humanizer);
+                
+                await element.TypeAsync(piece, new TypeOptions { Delay = randomDelay });
 
-				await page.PressShiftEnterAsync();
-			}
-		}
+                await page.PressShiftEnterAsync();
+
+                Thread.Sleep(100);
+            }
+        }
 
 		// This is in ms
-		private static int GetRandomDelay()
+		private static int GetRandomDelay(HumanizerConfiguration humanizer)
         {
-            return new Random().Next(50, 150);
+            return new Random().Next(
+                humanizer.MinimumMessageTypingDelay, 
+                humanizer.MaximumMessageTypingDelay);
         }
 
 		public static async Task ClickOnElementAsync(this Page page, string elementSelector)

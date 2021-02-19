@@ -143,7 +143,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 await page.TypeOnElementAsync(
                     elementSelector: Config.WhatsAppWebMetadata.ChatInput,
                     GetHumanizedFarewell(),
-                    delayInMs: random.Next(Humanizer.MinimumDelayAfterFarewell, Humanizer.MaximumDelayAfterFarewell));
+                    Humanizer);
                 await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.SendMessageButton);
             }
             catch (Exception e)
@@ -159,15 +159,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 await page.WaitForSelectorAsync(Config.WhatsAppWebMetadata.ChatInput);
                 Thread.Sleep(TimeSpan.FromSeconds(1));
                 await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.ChatInput);
-            
-                var sendIstantaneouslly = Humanizer.InsaneMode || !useHumanizer;
-                var sendDelay = sendIstantaneouslly ? 10 : random.Next(Humanizer.MinimumMessageTypingDelay, Humanizer.MaximumMessageTypingDelay);
 
-                await page.ClickAsync(Config.WhatsAppWebMetadata.ChatInput);
+                //await page.ClickAsync(Config.WhatsAppWebMetadata.ChatInput);
                 await page.TypeOnElementAsync(
                     elementSelector: Config.WhatsAppWebMetadata.ChatInput,
                     text: GetTextWithRandomSpaceBetweenWords(messageText),
-                    delayInMs: sendDelay,
+                    Humanizer,
                     useParser: true);
             
                 if (sendAfterTyping)
@@ -185,7 +182,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             var finalText = string.Empty;
 
-            foreach (var text in texts)
+            foreach (var text in texts.ToImmutableList())
             {
                 finalText += text;
                 if (text.Contains("\r\n") || text.Contains("\r\n"))
@@ -207,7 +204,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 await page.TypeOnElementAsync(
                     Config.WhatsAppWebMetadata.ChatInput,
                     GetHumanizedGreeting(),
-                    random.Next(Humanizer.MinimumGreetingTypingDelay, Humanizer.MaximumGreetingTypingDelay));
+                    Humanizer);
                 await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.SendMessageButton);
                 Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterGreeting, Humanizer.MaximumDelayAfterGreeting)));
             }
@@ -328,11 +325,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
         private static string GetTextWithRandomSpaceBetweenWords(string messageText) 
         {
-            var spaceCollection = new[] { " ", "  "};
-            var separated = messageText.Split(" ")
+            var spaceCollection = new[] { " ", "  ", " ", "  ", " ", "  ", " ", "  ", " ", "  "};
+            var separated = messageText.Trim().Split(" ")
                 .ToImmutableList();
 
-            return separated.Aggregate(string.Empty, (current, message) => current + message + spaceCollection.Random());
+            var final = separated.Aggregate(string.Empty, (current, message) => current + message + spaceCollection.Random());
+
+            return final;
         }
     }
 }

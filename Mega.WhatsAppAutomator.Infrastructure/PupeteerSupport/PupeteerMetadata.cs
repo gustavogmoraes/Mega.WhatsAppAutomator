@@ -159,7 +159,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 Headless = Headless,
                 ExecutablePath = ExecutablePath,
                 Args = CustomsArgsForHeadless,
-                UserDataDir = UserDataDir
+                UserDataDir = UserDataDir,
+                SlowMo = 1
             };
         }
 
