@@ -22,7 +22,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.TextNow
         {
             await Page.BringToFrontAsync();
             await Page.GoToAsync("https://qualoperadora.info/");
-            await Page.TypeOnElementAsync("#tel", number);
+            //await Page.TypeOnElementAsync("#tel", number);
             await Page.ClickOnElementAsync("#bto");
             
             var resultSelector = "#ctd > div.resultado > div > img";

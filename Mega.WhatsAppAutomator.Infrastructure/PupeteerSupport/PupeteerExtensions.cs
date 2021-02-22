@@ -88,7 +88,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             
             if (!useParser)
             {
-                await element.TypeAsync(text, new TypeOptions { Delay = GetRandomDelay(humanizer) });
+                //await element.TypeAsync(text, new TypeOptions { Delay = GetRandomDelay(humanizer) });
+                await element.TypeAsync(text);
                 
                 return;
             }
@@ -102,8 +103,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             foreach (var piece in pieces)
             {
                 var randomDelay = GetRandomDelay(humanizer);
-                
-                await element.TypeAsync(piece, new TypeOptions { Delay = randomDelay });
+
+                //await element.TypeAsync(piece, new TypeOptions { Delay = randomDelay });
+                await element.TypeAsync(piece);
 
                 await page.PressShiftEnterAsync();
 

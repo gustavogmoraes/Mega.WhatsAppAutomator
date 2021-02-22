@@ -10,7 +10,6 @@ using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
-using PuppeteerSharp.Input;
 using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
@@ -181,6 +180,20 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static async Task SendGroupOfMessages(Page page, List<string> texts, Random random, bool useHumanizationMessages = false)
         {
             var finalText = string.Empty;
+
+            if (AutomationQueue.ClientConfiguration.ShortenReportMessages && 
+                texts.Count(x => x.Contains("O resultado")) >= 2)
+            {
+                texts = texts.Select(x =>
+                    x.Replace("O resultado do paciente", string.Empty)
+                     .Replace("O resultado da paciente", string.Empty)
+                     .Replace("foi liberado", string.Empty)
+                     .Replace(".", string.Empty)
+                     .Trim())
+                    .ToList();
+
+                texts.Insert(0, "Os resultados dos seguintes pacientes foram liberados:\n");
+            }
 
             foreach (var text in texts.ToImmutableList())
             {

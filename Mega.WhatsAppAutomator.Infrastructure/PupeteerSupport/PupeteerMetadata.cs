@@ -160,7 +160,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 ExecutablePath = ExecutablePath,
                 Args = CustomsArgsForHeadless,
                 UserDataDir = UserDataDir,
-                SlowMo = 1
+                SlowMo = 1 // If don't do this, sometimes Puppeteer 'eats' the first character of a string on type async
             };
         }
 
@@ -174,7 +174,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             var osPlatform = DevOpsHelper.GetOsPlatform();
             if(osPlatform == OSPlatform.Linux)
             {
-                // TODO
+                //TODO
                 throw new NotImplementedException();
             }
 
