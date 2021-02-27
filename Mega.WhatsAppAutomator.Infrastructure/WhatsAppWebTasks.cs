@@ -45,6 +45,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             var random = new Random();
+            
+            Thread.Sleep(TimeSpan.FromMilliseconds(random.Next(600, 2500)));
 
             var useHumanizationMessages = ShouldUseHumanizationMessages(number) && randommicallyDisableHumanization && RandomBoolean();
             // Greetings
@@ -54,7 +56,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await SendGroupOfMessages(page, texts, random, useHumanizationMessages);
             if (useHumanizationMessages)
             {
-                Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage)));
+                Thread.Sleep(TimeSpan.FromSeconds(
+                    random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage)));
             }
 
             // Farewell
