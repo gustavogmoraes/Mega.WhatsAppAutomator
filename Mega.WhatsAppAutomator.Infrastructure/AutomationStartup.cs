@@ -171,13 +171,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await page.ClickOnElementAsync(googleLoginSelector);
             await page.WaitForNavigationAsync();
 
-            await page.TypeOnElementAsync("#identifierId", "gustavogmoraes2");
+            //await page.TypeOnElementAsync("#identifierId", "gustavogmoraes2");
             await page.ClickOnElementAsync("#identifierNext > div > button > div.VfPpkd-RLmnJb");
 
             var passwordSelector = "#password > div.aCsJod.oJeWuf > div > div.Xb9hP > input";
             await page.WaitForSelectorAsync(passwordSelector);
             Thread.Sleep(TimeSpan.FromSeconds(2));
-            await page.TypeOnElementAsync(passwordSelector, "Gustavo26@");
+            //await page.TypeOnElementAsync(passwordSelector, "Gustavo26@");
             await page.ClickOnElementAsync("#passwordNext > div > button > div.VfPpkd-RLmnJb");
         }
 
