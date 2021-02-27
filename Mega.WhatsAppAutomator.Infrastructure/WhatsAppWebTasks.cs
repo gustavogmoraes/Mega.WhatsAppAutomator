@@ -53,10 +53,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             // Message
             await SendGroupOfMessages(page, texts, random, useHumanizationMessages);
-            if (useHumanizationMessages) { Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage))); }
-            
-            Thread.Sleep(TimeSpan.FromSeconds(1));
-            
+            if (useHumanizationMessages)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage)));
+            }
+
             // Farewell
             if (useHumanizationMessages) { await SendFarewell(page, random); }
 
@@ -160,13 +161,21 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 Thread.Sleep(TimeSpan.FromSeconds(1));
                 await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.ChatInput);
 
-                //await page.ClickAsync(Config.WhatsAppWebMetadata.ChatInput);
-                await page.TypeOnElementAsync(
-                    elementSelector: Config.WhatsAppWebMetadata.ChatInput,
-                    text: GetTextWithRandomSpaceBetweenWords(messageText),
-                    Humanizer,
-                    useParser: true);
-            
+                if (useHumanizer)
+                {
+                    await page.TypeOnElementAsync(
+                        elementSelector: Config.WhatsAppWebMetadata.ChatInput,
+                        text: GetTextWithRandomSpaceBetweenWords(messageText),
+                        humanizer: Humanizer,
+                        useParser: true);
+                }
+                else
+                {
+                    await page.EvaluateFunctionAsync(
+                        JavaScriptFunctions.CopyMessageToWhatsAppWebTextBox, 
+                        Config.WhatsAppWebMetadata.ChatInput, messageText);
+                }
+                
                 if (sendAfterTyping)
                 {
                     await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.SendMessageButton);

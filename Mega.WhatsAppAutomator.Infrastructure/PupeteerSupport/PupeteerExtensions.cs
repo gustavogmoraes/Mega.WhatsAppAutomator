@@ -78,7 +78,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             this Page page, 
             string elementSelector, 
             string text,
-            HumanizerConfiguration humanizer,
+            HumanizerConfiguration humanizer = null,
             bool useParser = false)
         {
             var element = await page.QuerySelectorAsync(elementSelector);
@@ -86,7 +86,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             
             Thread.Sleep(500);
             
-            if (!useParser)
+            if (!useParser && humanizer != null)
             {
                 await element.TypeAsync(text, new TypeOptions { Delay = GetRandomDelay(humanizer) });
                 
@@ -101,7 +101,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 
             foreach (var piece in pieces)
             {
-                var randomDelay = GetRandomDelay(humanizer);
+                var randomDelay = humanizer == null 
+                    ? 0 
+                    : GetRandomDelay(humanizer);
                 
                 await element.TypeAsync(piece, new TypeOptions { Delay = randomDelay });
 

@@ -45,7 +45,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             while (!AutomationQueue.ReadyToBeShutdown)
             {
-                Thread.Sleep(TimeSpan.FromSeconds((2)));
+                Thread.Sleep(TimeSpan.FromSeconds(2));
             }
             
             WriteOnConsole("Application has been shut down gracefully");

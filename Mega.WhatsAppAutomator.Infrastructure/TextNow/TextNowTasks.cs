@@ -15,7 +15,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.TextNow
         {
             await page.BringToFrontAsync();
             await page.ClickOnElementAsync("#newText");
-            await page.TypeOnElementAsync("#recipientsView > div > div > input", ConvertNumber(message.Number));
+            //await page.TypeOnElementAsync("#recipientsView > div > div > input", ConvertNumber(message.Number));
             await page.ClickOnElementAsync("#text-input");
             
             //await page.Keyboard.PressAsync("Return");
