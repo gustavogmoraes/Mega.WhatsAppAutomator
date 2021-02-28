@@ -45,8 +45,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             var random = new Random();
-            
-            Thread.Sleep(TimeSpan.FromMilliseconds(random.Next(600, 2500)));
 
             var useHumanizationMessages = ShouldUseHumanizationMessages(number) && randommicallyDisableHumanization && RandomBoolean();
             // Greetings
@@ -160,22 +158,26 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             try
             {
                 await page.WaitForSelectorAsync(Config.WhatsAppWebMetadata.ChatInput);
-                Thread.Sleep(TimeSpan.FromSeconds(1));
                 await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.ChatInput);
+
+                var textToSend = AutomationQueue.ClientConfiguration.ScrambleMessageWithWhitespaces
+                    ? GetTextWithRandomSpaceBetweenWords(messageText)
+                    : messageText;
 
                 if (useHumanizer)
                 {
                     await page.TypeOnElementAsync(
                         elementSelector: Config.WhatsAppWebMetadata.ChatInput,
-                        text: GetTextWithRandomSpaceBetweenWords(messageText),
+                        text: textToSend,
                         humanizer: Humanizer,
                         useParser: true);
                 }
                 else
                 {
+                    Thread.Sleep(TimeSpan.FromMilliseconds(random.Next(600, 3000)));
                     await page.EvaluateFunctionAsync(
                         JavaScriptFunctions.CopyMessageToWhatsAppWebTextBox, 
-                        Config.WhatsAppWebMetadata.ChatInput, messageText);
+                        Config.WhatsAppWebMetadata.ChatInput, textToSend);
                 }
                 
                 if (sendAfterTyping)

@@ -15,7 +15,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 });
                 
                 var textbox = document.querySelector(textBoxSelector);
-                textbox.textContent = message;
+                textbox.textContent = messageText;
                 textbox.dispatchEvent(event);
             }";
     }
