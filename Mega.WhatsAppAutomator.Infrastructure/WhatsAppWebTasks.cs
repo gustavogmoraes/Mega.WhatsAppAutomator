@@ -18,19 +18,25 @@ namespace Mega.WhatsAppAutomator.Infrastructure
     {
         private static HumanizerConfiguration Humanizer { get; set; }
         
+        //TODO: Review this method
         public static async Task<bool> SendMessage(Page page, Message message)
         {
             var messageNumber = message.Number;
             TreatStrangeNumbers(ref messageNumber);
 
-            await OpenChat(page, messageNumber);
+            var numberExistsAndTried = await CheckIfNumberExists(page, message.Number);
+            var numberExists = numberExistsAndTried.Item1;
+            var triedToOpenChat = numberExistsAndTried.Item2;
 
-            if (!await CheckIfNumberExists(page, message.Number))
-			{
-                await page.ClickAsync(Config.WhatsAppWebMetadata.AcceptInvalidNumber);
-				await StoreNotDeliveredMessage(message);
-				return false;
-			}
+            if (!numberExists && !triedToOpenChat)
+            {
+                await StoreNotDeliveredMessage(message);
+                return false;
+            }
+            
+            await page.ClickAsync(Config.WhatsAppWebMetadata.AcceptInvalidNumber);
+            await StoreNotDeliveredMessage(message);
+            return false;
 
 			await SendHumanizedMessage(page, message.Text, messageNumber);
             return true;
@@ -74,9 +80,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             Humanizer.UseHumanizer && 
             !GetCollaboratorNumbers().Contains(number);
 
-        public static async Task DismissErrorAndStoreNotDelivereds(Page page, List<ToBeSent> intendeds)
+        public static async Task DismissErrorAndStoreNotDelivereds(
+            Page page, List<ToBeSent> intendeds, bool triedToOpenChat = true)
         {
-            await page.ClickAsync(Config.WhatsAppWebMetadata.AcceptInvalidNumber);
+            if (triedToOpenChat)
+            {
+                await page.ClickAsync(Config.WhatsAppWebMetadata.AcceptInvalidNumber);
+            }
+            
             foreach (var intend in intendeds)
             {
                 await StoreNotDeliveredMessage(intend.Message);
@@ -270,11 +281,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return contactsOnDatabase.Distinct().ToList();
         }
 
-		public static async Task<bool> CheckIfNumberExists(Page page, string number)
+		public static async Task<Tuple<bool, bool>> CheckIfNumberExists(Page page, string number)
         {
             if (string.IsNullOrEmpty(number) || number.Length < 8)
             {
-                return false;
+                return new Tuple<bool, bool>(false, false);
             }
 
             //// Just to guarantee
@@ -282,7 +293,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             var doesExist = await CheckIfNumberExistsInternal(page, number);
             if (doesExist)
             {
-                return true;
+                return new Tuple<bool, bool>(true, true);
             }
             
             //// Trying the number with and without the brazilian 9th digit
@@ -290,12 +301,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 var numberWithout9ThDigit = number.RemoveBrazilian9ThDigit();
                 number = numberWithout9ThDigit;
-                return await CheckIfNumberExistsInternal(page, numberWithout9ThDigit);
+                var exists = await CheckIfNumberExistsInternal(page, numberWithout9ThDigit);
+                return new Tuple<bool, bool>(exists, true);
             }
 
             var numberWith9ThDigit = number.InsertBrazilian9ThDigit();
             number = numberWith9ThDigit;
-            return await CheckIfNumberExistsInternal(page, numberWith9ThDigit);
+            var exists2 = await CheckIfNumberExistsInternal(page, numberWith9ThDigit);
+            return new Tuple<bool, bool>(exists2, true);
         }
 
         private static async Task<bool> CheckIfNumberExistsInternal(Page page, string number)

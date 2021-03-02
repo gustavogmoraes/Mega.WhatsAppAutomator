@@ -386,6 +386,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 
 		public static string NumberToReport(this string number)
 		{
+			if (number.Length <= 5)
+			{
+				return number;
+			}
+			
 			number = number.Replace("-", string.Empty);
 			number = number.Trim();
 			

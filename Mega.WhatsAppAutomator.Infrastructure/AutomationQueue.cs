@@ -257,10 +257,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 WhatsAppWebTasks.TreatStrangeNumbers(ref number);
                 
                 //// During the number exists JS expression evaluation, the chat page with the number is already opened
-                var numberExists = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
+                var numberExistsAndTried = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
+                var numberExists = numberExistsAndTried.Item1;
+                var triedToOpenChat = numberExistsAndTried.Item2;
+                
                 if (!numberExists)
                 {
-                    await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, messages);
+                    await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, messages, triedToOpenChat);
                     RemoveNotSentMessages(messages);
                     WriteOnConsole($"\t{DateTime.UtcNow.ToBraziliaDateTime()}: " +
                                    $"Number {number.NumberToReport()} does not exist on WhatsApp, storing as not delivered");
