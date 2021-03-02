@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
@@ -68,7 +69,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             await GetMetadata();
 
-            var page = await browser.NewPageAsync();
+            var page = (await browser.PagesAsync()).FirstOrDefault();
             WriteOnConsole($"Launched, now going to page");
             await NavigateToWhatsAppWebPage(page);
 
