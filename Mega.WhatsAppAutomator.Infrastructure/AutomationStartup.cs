@@ -70,6 +70,13 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await GetMetadata();
 
             var page = (await browser.PagesAsync()).FirstOrDefault();
+            if (page == null)
+            {
+                throw new Exception("Page is null!");
+            }
+            
+            await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
+            
             WriteOnConsole($"Launched, now going to page");
             await NavigateToWhatsAppWebPage(page);
 
