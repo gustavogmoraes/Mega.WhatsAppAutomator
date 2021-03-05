@@ -173,22 +173,27 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 var textToSend = AutomationQueue.ClientConfiguration.ScrambleMessageWithWhitespaces
                     ? GetTextWithRandomSpaceBetweenWords(messageText)
                     : messageText;
-
-                if (useHumanizer)
-                {
-                    await page.TypeOnElementAsync(
-                        elementSelector: Config.WhatsAppWebMetadata.ChatInput,
-                        text: textToSend,
-                        humanizer: Humanizer,
-                        useParser: true);
-                }
-                else
-                {
-                    Thread.Sleep(TimeSpan.FromMilliseconds(random.Next(600, 3000)));
-                    await page.EvaluateFunctionAsync(
-                        JavaScriptFunctions.CopyMessageToWhatsAppWebTextBox, 
-                        Config.WhatsAppWebMetadata.ChatInput, textToSend);
-                }
+                
+                await page.TypeOnElementAsync(
+                    elementSelector: Config.WhatsAppWebMetadata.ChatInput,
+                    text: textToSend,
+                    humanizer: Humanizer,
+                    useParser: true);
+                // if (useHumanizer)
+                // {
+                //     await page.TypeOnElementAsync(
+                //         elementSelector: Config.WhatsAppWebMetadata.ChatInput,
+                //         text: textToSend,
+                //         humanizer: Humanizer,
+                //         useParser: true);
+                // }
+                // else
+                // {
+                //     Thread.Sleep(TimeSpan.FromMilliseconds(random.Next(600, 3000)));
+                //     await page.EvaluateFunctionAsync(
+                //         JavaScriptFunctions.CopyMessageToWhatsAppWebTextBox, 
+                //         Config.WhatsAppWebMetadata.ChatInput, textToSend);
+                // }
                 
                 if (sendAfterTyping)
                 {

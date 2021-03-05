@@ -145,7 +145,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 Height = 720
             });
             
-            await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             await page.GoToAsync(Config.WhatsAppWebMetadata.WhatsAppUrl);
         }
