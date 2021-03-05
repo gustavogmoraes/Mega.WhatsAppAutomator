@@ -75,9 +75,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 throw new Exception("Page is null!");
             }
             
+            WriteOnConsole($"Setting user agent to {PupeteerMetadata.CustomUserAgentForHeadless}");
             await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
             
-            WriteOnConsole($"Launched, now going to page");
+            WriteOnConsole("Launched, now going to page");
             await NavigateToWhatsAppWebPage(page);
 
             var amILogged = await CheckItsLoggedIn(page);
