@@ -74,9 +74,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 throw new Exception("Page is null!");
             }
-            
-            WriteOnConsole($"Setting user agent to {PupeteerMetadata.CustomUserAgentForHeadless}");
-            await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
+
+            if (Config.WhatsAppWebMetadata.UseCustomUserAgent)
+            {
+                WriteOnConsole($"Setting user agent to {Config.WhatsAppWebMetadata.CustomUserAgent}");
+                await page.SetUserAgentAsync(Config.WhatsAppWebMetadata.CustomUserAgent);
+            }
             
             WriteOnConsole("Launched, now going to page");
             await NavigateToWhatsAppWebPage(page);
@@ -166,7 +169,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 DeviceScaleFactor = 1
             });
             
-            await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
+            //await page.SetUserAgentAsync(PupeteerMetadata.CustomUserAgentForHeadless);
             await page.GoToAsync("https://www.textnow.com/login");
 
             var googleLoginSelector = "#google-login";

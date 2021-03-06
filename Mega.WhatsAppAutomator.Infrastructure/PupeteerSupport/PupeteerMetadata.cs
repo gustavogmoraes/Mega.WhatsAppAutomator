@@ -17,9 +17,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 {
     public static class PupeteerMetadata
     {
-        public static string CustomUserAgentForHeadless =>
-            @"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.72-1 Safari/537.36";
-
         private static string[] CustomsArgsForHeadless => new []
         {
             "--proxy-server='direct://'",
@@ -40,19 +37,23 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             "--disable-default-apps",
             "--enable-features=NetworkService",
             "--disable-setuid-sandbox",
-            "--no-sandbox"
+            "--no-sandbox",
+            "--window-size=1600,900",
+            "--start-maximized",
+            "--enable-automation",
+            // "--user-agent="
         };
         
         // TODO: Review these and test, the less space we use to store data the better
         private static readonly string[] UserDataExceptions =
         {
             Path.Combine("Default", "Web Data"),
-            Path.Combine("Default","Login Data"),
-            Path.Combine("Default","Last Session"),
-            Path.Combine("Default","Cookies"),
-            Path.Combine("Default","Cookies-journal"),
-            Path.Combine("Default","Login Data-journal"),
-            Path.Combine("Default","Web Data-journal"),
+            Path.Combine("Default", "Login Data"),
+            Path.Combine("Default", "Last Session"),
+            Path.Combine("Default", "Cookies"),
+            Path.Combine("Default", "Cookies-journal"),
+            Path.Combine("Default", "Login Data-journal"),
+            Path.Combine("Default", "Web Data-journal"),
             Path.Combine("Default", "Code Cache"),
             Path.Combine("Default", "Local Storage") // --> I think this guy is the only one necessary (Need further testing)
             //Path.Combine("Default", Cache"), --> This is the space killer
@@ -160,7 +161,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 ExecutablePath = ExecutablePath,
                 Args = CustomsArgsForHeadless,
                 UserDataDir = UserDataDir,
-                SlowMo = 1 // If don't do this, sometimes Puppeteer 'eats' the first character of a string on type async
+                SlowMo = 1, // If don't do this, sometimes Puppeteer 'eats' the first character of a string on type async
+                DefaultViewport = new ViewPortOptions
+                {
+                    IsLandscape = true,
+                    IsMobile = false,
+                    Width = 1600,
+                    Height = 900
+                }
             };
         }
 
