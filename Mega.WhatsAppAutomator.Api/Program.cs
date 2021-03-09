@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Mega.WhatsAppAutomator.Api.ApiUtils;
-using Mega.WhatsAppAutomator.Domain.Objects;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Mega.WhatsAppAutomator.Infrastructure;
-using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,7 +28,7 @@ namespace Mega.WhatsAppAutomator.Api
 
             //// Creates automation
             AutomationStartup.Start();
-
+            
             apiHost.Run();
         }
 

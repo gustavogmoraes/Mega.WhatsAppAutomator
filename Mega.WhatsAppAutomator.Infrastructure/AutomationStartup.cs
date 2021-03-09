@@ -18,6 +18,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public static bool SmsReady { get; set; }
         
         public static Browser BrowserRef { get; set; }
+        
 
         public static async Task StartSms()
         {
@@ -117,6 +118,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     Thread.Sleep(500);
                 }
         }
+        
 		// private static async Task StartListeningToMessagesAsync(Page page)
 		// {
         // 	await page.ClickOnElementAsync(WhatsAppWebMetadata.Unread);
@@ -148,14 +150,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         private static async Task NavigateToWhatsAppWebPage(Page page)
         {
-            await page.SetViewportAsync(new ViewPortOptions
-            {
-                IsMobile = false,
-                HasTouch = false,
-                Width = 1280,
-                Height = 720
-            });
-            
             Thread.Sleep(TimeSpan.FromSeconds(2));
             await page.GoToAsync(Config.WhatsAppWebMetadata.WhatsAppUrl);
         }
@@ -195,7 +189,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static async Task GetQrCode(Page page)
         {
             WriteOnConsole("Getting QrCode");
-            Thread.Sleep(5000);
+            
+            Thread.Sleep(TimeSpan.FromSeconds(3));
             await page.WaitForSelectorAsync(
                 Config.WhatsAppWebMetadata.SelectorMainDiv, 
                 new WaitForSelectorOptions
@@ -203,6 +198,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)
                 });
             Thread.Sleep(TimeSpan.FromSeconds(3));
+            
             if(!Directory.Exists(FileManagement.ScreenshotsDirectory))
             {
                 Directory.CreateDirectory(FileManagement.ScreenshotsDirectory);
@@ -210,7 +206,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             var fileName = Path.Combine(FileManagement.ScreenshotsDirectory, "QrCode.jpg");
             WriteOnConsole($"Saved file at {fileName}");
-            await page.ScreenshotAsync(fileName, new ScreenshotOptions { Clip = await page.GetElementClipAsync(Config.WhatsAppWebMetadata.SelectorMainDiv) });
+            await page.ScreenshotAsync(
+                fileName, 
+                new ScreenshotOptions
+                {
+                    Clip = await page.GetElementClipAsync(Config.WhatsAppWebMetadata.SelectorMainDiv)
+                });
         }
     }
 }

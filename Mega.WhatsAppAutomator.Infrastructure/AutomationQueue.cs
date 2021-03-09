@@ -256,11 +256,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 
                 WhatsAppWebTasks.TreatStrangeNumbers(ref number);
                 
-                //// During the number exists JS expression evaluation, the chat page with the number is already opened
-                var numberExistsAndTried = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
-                var numberExists = numberExistsAndTried.Item1;
-                var triedToOpenChat = numberExistsAndTried.Item2;
-                
+                //// During the number exists JS expression evaluation, if number exists the chat page with the number is already opened
+                var (numberExists, triedToOpenChat) = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
                 if (!numberExists)
                 {
                     await WhatsAppWebTasks.DismissErrorAndStoreNotDelivereds(page, messages, triedToOpenChat);
@@ -323,8 +320,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         }
 
         private static string GotXMessagesToBeSent() =>
-            $"started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +
-            "got {result}.Count messages to be sent, request time: {totalTime}.Count";
+            $"Started new cycle of {ClientConfiguration.MessagesPerCycle} messages, " +
+             "got {result}.Count messages to be sent, request time: {totalTime}.Count";
 
         private static async Task SendMessagesNoStrategy()
         {

@@ -78,22 +78,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             this Page page, 
             string elementSelector, 
             string text,
-            HumanizerConfiguration humanizer = null,
+            MessagePhase phase,
             bool useParser = false)
         {
             var element = await page.QuerySelectorAsync(elementSelector);
             await element.ClickAsync();
             
-            Thread.Sleep(500);
+            Thread.Sleep(new Random().Next(500, 800));
             
-            if (!useParser && humanizer != null)
+            if (!useParser && phase != null)
             {
-                await element.TypeAsync(text, new TypeOptions { Delay = GetRandomDelay(humanizer) });
+                await element.TypeAsync(text, new TypeOptions { Delay = GetRandomTypingDelay(phase) });
                 
                 return;
             }
             
-            //TODO: Review these
+            // TODO: Review these
             var newText = text.Replace("\n\r", "\r\n");
             var pieces = newText.Split(new[] {"\r\n"}, StringSplitOptions.None)
                 .Select(x => x.Trim())
@@ -101,24 +101,26 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 
             foreach (var piece in pieces)
             {
-                var randomDelay = humanizer == null 
-                    ? 0 
-                    : GetRandomDelay(humanizer);
+                var randomDelay = phase == null 
+                    ? 0
+                    : GetRandomTypingDelay(phase);
                 
                 await element.TypeAsync(piece, new TypeOptions { Delay = randomDelay });
-
+                
                 await page.PressShiftEnterAsync();
 
-                Thread.Sleep(100);
+                Thread.Sleep(new Random().Next(100, 300));
             }
         }
-
-		// This is in ms
-		private static int GetRandomDelay(HumanizerConfiguration humanizer)
+        
+        public static int GetRandomTypingDelay(MessagePhase phase)
         {
-            return new Random().Next(
-                humanizer.MinimumMessageTypingDelay, 
-                humanizer.MaximumMessageTypingDelay);
+            return new Random().Next(phase.MinTypingDelay, phase.MaxTypingDelay);
+        }
+        
+        public static int GetRandomWaitTime(MessagePhase phase)
+        {
+            return new Random().Next(phase.MinWaitTimeAfter, phase.MaxWaitTimeAfter);
         }
 
 		public static async Task ClickOnElementAsync(this Page page, string elementSelector)

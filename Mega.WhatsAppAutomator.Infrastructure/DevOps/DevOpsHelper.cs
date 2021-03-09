@@ -61,17 +61,19 @@ namespace Mega.WhatsAppAutomator.Infrastructure.DevOps
             {
                 return;
             }
-            var searcher = new ManagementObjectSearcher($"Select * From Win32_Process Where ParentProcessID={pid}");
-            var moc = searcher.Get();
             
-            foreach (ManagementObject mo in moc)
+            var searcher = new ManagementObjectSearcher($"Select * From Win32_Process Where ParentProcessID={pid}");
+            var managementObjects = searcher.Get();
+            
+            foreach (var o in managementObjects)
             {
+                var mo = (ManagementObject) o;
                 KillProcessAndChildrenOnWindows(Convert.ToInt32(mo["ProcessID"]));
             }
             try
             {
-                var proc = Process.GetProcessById(pid);
-                proc.Kill();
+                var process = Process.GetProcessById(pid);
+                process.Kill();
             }
             catch (ArgumentException)
             {
@@ -87,6 +89,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.DevOps
             var toBeSents = session.Query<ToBeSent>().ToList();
             
             Stores.MegaWhatsAppApi.BulkUpdate(toBeSents, x => x.CurrentlyProcessingOnAnotherInstance, false);
+            
+            // Discover a way to restart application
         }
     }
 }

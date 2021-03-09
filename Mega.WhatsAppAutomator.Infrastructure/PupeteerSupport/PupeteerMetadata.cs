@@ -166,8 +166,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
                 {
                     IsLandscape = true,
                     IsMobile = false,
-                    Width = 1600,
-                    Height = 900
+                    Width = 1280,
+                    Height = 720
                 }
             };
         }

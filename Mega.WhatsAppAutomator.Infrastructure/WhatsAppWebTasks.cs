@@ -10,12 +10,21 @@ using Mega.WhatsAppAutomator.Infrastructure.Persistence;
 using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using PuppeteerSharp;
+using Raven.Client.Documents;
+using static Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport.PupeteerExtensions;
 
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
     public static class WhatsAppWebTasks
     {
+        static WhatsAppWebTasks()
+        {
+            Randomizer = new Random();
+        }
+        
         private static HumanizerConfiguration Humanizer { get; set; }
+        
+        private static Random Randomizer { get; set; }
         
         //TODO: Review this method
         public static async Task<bool> SendMessage(Page page, Message message)
@@ -49,22 +58,21 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static async Task<bool> SendHumanizedMessageByNumberGroups(Page page, string number, List<string> texts, bool randommicallyDisableHumanization = true)
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
-            var random = new Random();
-
-            var useHumanizationMessages = ShouldUseHumanizationMessages(number) && randommicallyDisableHumanization && RandomBoolean();
+            var useHumanizationMessages = ShouldUseHumanizationMessages(number);
+            
             // Greetings
-            if (useHumanizationMessages) { await SendGreetings(page, random); }
+            if (useHumanizationMessages) { await SendPhase(page, Humanizer.Greeting); }
 
             // Message
-            await SendGroupOfMessages(page, texts, random, useHumanizationMessages);
+            await SendGroupOfMessages(page, texts, Humanizer.Message, useHumanizationMessages);
             if (useHumanizationMessages)
             {
-                Thread.Sleep(TimeSpan.FromSeconds(
-                    random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage)));
+                var randomWaitTimeAfterMessage = GetRandomWaitTime(Humanizer.Message);
+                Thread.Sleep(TimeSpan.FromSeconds(randomWaitTimeAfterMessage));
             }
 
             // Farewell
-            if (useHumanizationMessages) { await SendFarewell(page, random); }
+            if (useHumanizationMessages) { await SendPhase(page, Humanizer.Farewell); }
 
             return useHumanizationMessages;
         }
@@ -75,9 +83,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         }
 
         private static bool ShouldUseHumanizationMessages(string number) =>
-            !Humanizer.InsaneMode && 
-            Humanizer.UseHumanizer && 
-            !GetCollaboratorNumbers().Contains(number);
+            Humanizer.UseHumanizer &&
+            !Humanizer.InsaneMode &&
+            !MadeContactPreviously(number);
+
+        private static bool MadeContactPreviously(string number)
+        {
+            var session = Stores.MegaWhatsAppApi.OpenSession();
+            return session.Query<Sent>()
+                .Any(x => x.Message.Number == number);
+        }
 
         public static async Task DismissErrorAndStoreNotDelivereds(
             Page page, List<ToBeSent> intendeds, bool triedToOpenChat = true)
@@ -124,61 +139,47 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static async Task SendHumanizedMessage(Page page, string messageText, string number)
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
-            var random = new Random();
-            
+            var useHumanizer = Humanizer != null && Humanizer.UseHumanizer;
+
             // Greetings
-            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
+            if (useHumanizer)
             {
-                await SendGreetings(page, random);
+                await SendPhase(page, Humanizer.Greeting);
+                Thread.Sleep(TimeSpan.FromSeconds(GetRandomWaitTime(Humanizer.Greeting)));
             }
             
             // Message
-            await SendMessage(page, messageText, random);
-            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
+            await SendMessage(page, messageText, Humanizer?.Message);
+            if (useHumanizer)
             {
-                Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterMessage, Humanizer.MaximumDelayAfterMessage)));
+                Thread.Sleep(TimeSpan.FromSeconds(GetRandomWaitTime(Humanizer.Message)));
             }
             
             // Farewell
-            if (!GetCollaboratorNumbers().Contains(number) || !Humanizer.UseHumanizer)
+            if (useHumanizer)
             {
-                await SendFarewell(page, random);
+                await SendPhase(page, Humanizer.Farewell);
+                Thread.Sleep(TimeSpan.FromSeconds(GetRandomWaitTime(Humanizer.Farewell)));
             }
         }
 
-        private static async Task SendFarewell(Page page, Random random)
-        {
-            try
-            {
-                await page.WaitForSelectorAsync(Config.WhatsAppWebMetadata.ChatInput);
-                await page.TypeOnElementAsync(
-                    elementSelector: Config.WhatsAppWebMetadata.ChatInput,
-                    GetHumanizedFarewell(),
-                    Humanizer);
-                await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.SendMessageButton);
-            }
-            catch (Exception e)
-            {
-                DevOpsHelper.StoreFatalErrorAndRestart(e);
-            }
-        }
-
-        private static async Task SendMessage(Page page, string messageText, Random random, bool sendAfterTyping = true, bool useHumanizer = false)
+        private static async Task SendMessage(Page page, string messageText, MessagePhase phase, bool sendAfterTyping = true, bool useHumanizer = false)
         {
             try
             {
                 await page.WaitForSelectorAsync(Config.WhatsAppWebMetadata.ChatInput);
                 await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.ChatInput);
 
-                var textToSend = AutomationQueue.ClientConfiguration.ScrambleMessageWithWhitespaces
+                var textToSend = AutomationQueue.ClientConfiguration.HumanizerConfiguration.ScrambleMessageWithWhitespaces
                     ? GetTextWithRandomSpaceBetweenWords(messageText)
                     : messageText;
                 
                 await page.TypeOnElementAsync(
                     elementSelector: Config.WhatsAppWebMetadata.ChatInput,
                     text: textToSend,
-                    humanizer: Humanizer,
+                    phase: phase,
                     useParser: true);
+                
                 // if (useHumanizer)
                 // {
                 //     await page.TypeOnElementAsync(
@@ -206,7 +207,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
         }
         
-        private static async Task SendGroupOfMessages(Page page, List<string> texts, Random random, bool useHumanizationMessages = false)
+        private static async Task SendGroupOfMessages(Page page, List<string> texts, MessagePhase phase, bool useHumanizationMessages = false)
         {
             var finalText = string.Empty;
 
@@ -236,54 +237,48 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 finalText += "\r\n";
             }
             
-            await SendMessage(page, finalText, random, useHumanizer: useHumanizationMessages);
+            await SendMessage(page, finalText, phase, useHumanizer: useHumanizationMessages);
         }
 
-        private static async Task SendGreetings(Page page, Random random)
+        private static async Task SendPhase(Page page, MessagePhase phase)
         {
             try
             {
-                await page.TypeOnElementAsync(
-                    Config.WhatsAppWebMetadata.ChatInput,
-                    GetHumanizedGreeting(),
-                    Humanizer);
+                var message = GetFromPool(phase.Pool);
+                
+                await page.TypeOnElementAsync(Config.WhatsAppWebMetadata.ChatInput, message, phase);
                 await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.SendMessageButton);
-                Thread.Sleep(TimeSpan.FromSeconds(random.Next(Humanizer.MinimumDelayAfterGreeting, Humanizer.MaximumDelayAfterGreeting)));
+                
+                Thread.Sleep(TimeSpan.FromSeconds(GetRandomWaitTime(phase)));
             }
             catch (Exception e)
             {
                 DevOpsHelper.StoreFatalErrorAndRestart(e);
             }
         }
-        
-        private static string GetClientPresentation()
-        {
-            return Humanizer.ClientPresentationsPool.Random();
-        }
-        
-        private static string GetHumanizedGreeting()
-        {
-            return $"{Humanizer.GreetingsPool.Random()} {Humanizer.CumplimentsPool.Random()}\r\n";
-        }
-        
-        private static string GetHumanizedFarewell()
-        {
-            return Humanizer.FarewellsPool.Random();
-        }
-        
-        private static IList<string> GetCollaboratorNumbers()
-        {
-            var contactsOnDatabase = Humanizer.CollaboratorsContacts.GetCopy();
-            var immutableCount = contactsOnDatabase.Count;
-            
-            for (int i = 0; i < immutableCount; i++)
-            {
-                contactsOnDatabase.Add(contactsOnDatabase[i].InsertBrazilian9ThDigit());
-                contactsOnDatabase.Add(contactsOnDatabase[i].RemoveBrazilian9ThDigit());
-            }
 
-            return contactsOnDatabase.Distinct().ToList();
+        private static string GetFromPool(IList<string> pool)
+        {
+            var str = $"{pool.Random()}\r\n";
+            
+            return Humanizer.ScrambleMessageWithWhitespaces
+                ? GetTextWithRandomSpaceBetweenWords(str)
+                : str;
         }
+
+        // private static IList<string> GetCollaboratorNumbers()
+        // {
+        //     var contactsOnDatabase = Humanizer.CollaboratorsContacts.GetCopy();
+        //     var immutableCount = contactsOnDatabase.Count;
+        //     
+        //     for (int i = 0; i < immutableCount; i++)
+        //     {
+        //         contactsOnDatabase.Add(contactsOnDatabase[i].InsertBrazilian9ThDigit());
+        //         contactsOnDatabase.Add(contactsOnDatabase[i].RemoveBrazilian9ThDigit());
+        //     }
+        //
+        //     return contactsOnDatabase.Distinct().ToList();
+        // }
 
 		public static async Task<Tuple<bool, bool>> CheckIfNumberExists(Page page, string number)
         {
@@ -367,7 +362,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await session.SaveChangesAsync();
         }
 
-        private static string GetTextWithRandomSpaceBetweenWords(string messageText) 
+        public static string GetTextWithRandomSpaceBetweenWords(string messageText) 
         {
             var spaceCollection = new[] { " ", "  ", " ", "  ", " ", "  ", " ", "  ", " ", "  "};
             var separated = messageText.Trim().Split(" ")
