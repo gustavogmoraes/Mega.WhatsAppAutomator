@@ -50,12 +50,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return true;
         }
 
-        public static async Task<bool> SendMessageGroupedByNumber(Page page, string number, List<string> listOfTexts)
-        {
-            return await SendHumanizedMessageByNumberGroups(page, number, listOfTexts);
-        }
-        
-        private static async Task<bool> SendHumanizedMessageByNumberGroups(Page page, string number, List<string> texts, bool randommicallyDisableHumanization = true)
+        public static async Task<bool> SendHumanizedMessageByNumberGroups(Page page, string number, List<string> texts, bool randommicallyDisableHumanization = true)
         {
             Humanizer = AutomationQueue.ClientConfiguration.HumanizerConfiguration;
             var useHumanizationMessages = ShouldUseHumanizationMessages(number);
@@ -63,6 +58,18 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             // Greetings
             if (useHumanizationMessages) { await SendPhase(page, Humanizer.Greeting); }
 
+            var embbededFarewell = false;
+            if (useHumanizationMessages && Humanizer.Farewell.EmbbedWithMessage)
+            {
+                var farewell = GetFromPool(Humanizer.Farewell.Pool);
+                var lastText = texts.LastOrDefault();
+                var final = lastText + $"\r\n{farewell}";
+
+                texts[^1] = final;
+                
+                embbededFarewell = true;
+            }
+            
             // Message
             await SendGroupOfMessages(page, texts, Humanizer.Message, useHumanizationMessages);
             if (useHumanizationMessages)
@@ -70,9 +77,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 var randomWaitTimeAfterMessage = GetRandomWaitTime(Humanizer.Message);
                 Thread.Sleep(TimeSpan.FromSeconds(randomWaitTimeAfterMessage));
             }
-
+            
             // Farewell
-            if (useHumanizationMessages) { await SendPhase(page, Humanizer.Farewell); }
+            if (useHumanizationMessages && !embbededFarewell) { await SendPhase(page, Humanizer.Farewell); }
 
             return useHumanizationMessages;
         }
@@ -82,16 +89,26 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             return new Random().Next(2) == 0;
         }
 
-        private static bool ShouldUseHumanizationMessages(string number) =>
-            Humanizer.UseHumanizer &&
-            !Humanizer.InsaneMode &&
-            !MadeContactPreviously(number);
+        private static bool ShouldUseHumanizationMessages(string number)
+        {
+            var madeContactPreviously = MadeContactPreviously(number);
+            
+            return Humanizer.UseHumanizer &&
+                   !Humanizer.InsaneMode &&
+                   !madeContactPreviously;
+        }
 
         private static bool MadeContactPreviously(string number)
         {
+            if (number.ContainsBrazilian9ThDigit())
+            {
+                number = number.RemoveBrazilian9ThDigit();
+            }
+            
             var session = Stores.MegaWhatsAppApi.OpenSession();
             return session.Query<Sent>()
-                .Any(x => x.Message.Number == number);
+                .Search(x => x.Message.Number, $"*{number}*")
+                .Any();
         }
 
         public static async Task DismissErrorAndStoreNotDelivereds(
@@ -246,7 +263,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             {
                 var message = GetFromPool(phase.Pool);
                 
-                await page.TypeOnElementAsync(Config.WhatsAppWebMetadata.ChatInput, message, phase);
+                await page.TypeOnElementAsync(Config.WhatsAppWebMetadata.ChatInput, message, phase, useParser: true);
                 await page.ClickOnElementAsync(Config.WhatsAppWebMetadata.SendMessageButton);
                 
                 Thread.Sleep(TimeSpan.FromSeconds(GetRandomWaitTime(phase)));

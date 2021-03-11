@@ -14,6 +14,6 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
 		
 		public MessagePhase Message { get; set; }
 		
-		public MessagePhase Farewell { get; set; }
+		public FarewellPhase Farewell { get; set; }
 	}
 }

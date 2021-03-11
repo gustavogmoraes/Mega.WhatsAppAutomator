@@ -121,10 +121,27 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         public static bool StopBrowser { get; set; }
         
+        public static Stopwatch Stopwatch { get; set; }
+
+        private static void EvaluatePauses()
+        {
+            // while (true)
+            // {
+            //     // TODO 
+            //     
+            //     Thread.Sleep(TimeSpan.FromSeconds(1));
+            // }
+        }
+        
         private static async Task QueueExecution()
         {
             try
             {
+                Stopwatch = new Stopwatch();
+                Stopwatch.Start();
+
+                _ = Task.Run(EvaluatePauses);
+                
                 while (!StopBrowser)
                 {
                     //TODO: After x cycles, clean messages on Whatsapp
@@ -246,9 +263,11 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     
                     Thread.Sleep(TimeSpan.FromSeconds(30));
                 }
+                
+                GetAndSetClientConfig();
 
                 var number = group.Key;
-                var texts = group.Select(x => x.Message.Text).ToList();
+                var texts = group.Select(x => x.Message.Text).Distinct().ToList();
                 var messages = group.ToList();
                 
                 var stopwatch = new Stopwatch();
@@ -267,7 +286,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 }
                 else
                 {
-                    var usedHumanizationMessages = await WhatsAppWebTasks.SendMessageGroupedByNumber(page, number, texts);
+                    var usedHumanizationMessages = await WhatsAppWebTasks.SendHumanizedMessageByNumberGroups(page, number, texts);
                     TickSentMessages(messages);
 
                     var totalLength = texts.Sum(x =>x.Length);
@@ -283,7 +302,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     stopwatch.Stop();
                 }
 
-                Thread.Sleep(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages));
+                Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenMessages)));
             }
             
             outerStopwatch.Stop();
@@ -307,7 +326,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             var items = await session.Query<ToBeSent>()
                 .Where(x => x.CurrentlyProcessingOnAnotherInstance != true)
                 .OrderBy(x => x.EntryTime)
-                .Take(ClientConfiguration.MessagesPerCycleNumberGroupingStrategy)
                 .ToListAsync();
 
             if (items.Any())

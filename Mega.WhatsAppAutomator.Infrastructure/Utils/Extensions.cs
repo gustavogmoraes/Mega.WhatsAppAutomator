@@ -422,7 +422,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 
 			return number.Remove(5, 1);
 		}
-        
+
 		public static string InsertBrazilian9ThDigit(this string number)
 		{
 			if (number == null || number.Length < 8)
