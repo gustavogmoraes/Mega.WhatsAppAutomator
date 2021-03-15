@@ -138,7 +138,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     Config.WhatsAppWebMetadata.SelectorMainDiv, 
                     new WaitForSelectorOptions
                     {
-                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)
+                        Timeout = Convert.ToInt32(TimeSpan.FromSeconds(20).TotalMilliseconds)
                     });
 				return false;
 			}

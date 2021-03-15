@@ -38,10 +38,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
             "--enable-features=NetworkService",
             "--disable-setuid-sandbox",
             "--no-sandbox",
-            "--window-size=1600,900",
-            "--start-maximized",
-            "--enable-automation",
-            // "--user-agent="
+            "--window-size=1280, 720",
+            //"--start-maximized"
         };
         
         // TODO: Review these and test, the less space we use to store data the better
