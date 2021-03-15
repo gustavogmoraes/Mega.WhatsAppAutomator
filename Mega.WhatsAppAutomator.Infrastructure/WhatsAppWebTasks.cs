@@ -244,8 +244,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             foreach (var text in texts.ToImmutableList())
             {
-                finalText += text;
-                if (text.Contains("\r\n") || text.Contains("\r\n"))
+                var t = text.Replace("\n", "\r\n");
+                finalText += t;
+                if (t.Contains("\r\n") || t.Contains("\r\n"))
                 {
                     finalText += "\n"; // this will send the message.
                     continue;

@@ -326,6 +326,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             var items = await session.Query<ToBeSent>()
                 .Where(x => x.CurrentlyProcessingOnAnotherInstance != true)
                 .OrderBy(x => x.EntryTime)
+                .Take(ClientConfiguration.MessagesPerCycleNumberGroupingStrategy)
                 .ToListAsync();
 
             if (items.Any())
