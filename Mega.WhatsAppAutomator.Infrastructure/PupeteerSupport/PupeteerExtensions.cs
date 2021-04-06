@@ -115,12 +115,12 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         
         public static int GetRandomTypingDelay(MessagePhase phase)
         {
-            return new Random().Next(phase.MinTypingDelay, phase.MaxTypingDelay);
+            return phase.TypingDelay.Pick();
         }
         
         public static int GetRandomWaitTime(MessagePhase phase)
         {
-            return new Random().Next(phase.MinWaitTimeAfter, phase.MaxWaitTimeAfter);
+            return phase.SecondsToWaitAfter.Pick();
         }
 
 		public static async Task ClickOnElementAsync(this Page page, string elementSelector)

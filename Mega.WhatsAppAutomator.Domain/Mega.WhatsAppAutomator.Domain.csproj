@@ -4,5 +4,9 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <OutputPath>..\Output</OutputPath>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
+    </ItemGroup>
 </Project>

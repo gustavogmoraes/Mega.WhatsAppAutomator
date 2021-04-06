@@ -4,14 +4,12 @@ namespace Mega.WhatsAppAutomator.Domain.Objects
 {
     public class MessagePhase
     {
-        public int MinTypingDelay { get; set; }
+        public RandomIntPicker SecondsToWaitBefore { get; set; }
         
-        public int MaxTypingDelay { get; set; }
+        public RandomIntPicker TypingDelay { get; set; }
         
-        public int MinWaitTimeAfter { get; set; }
+        public RandomIntPicker SecondsToWaitAfter { get; set; }
         
-        public int MaxWaitTimeAfter { get; set; }
-        
-        public IList<string> Pool { get; set; }
+        public List<string> Pool { get; set; }
     }
 }

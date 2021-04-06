@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Mega.WhatsAppAutomator.Domain.Objects
 {
     public class FarewellPhase : MessagePhase

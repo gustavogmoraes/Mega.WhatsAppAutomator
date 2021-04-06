@@ -13,6 +13,7 @@ using System.Security;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Mega.WhatsAppAutomator.Domain.Interfaces;
@@ -28,6 +29,7 @@ using Raven.Client.Documents.Queries;
 using Raven.Client.Documents.Session;
 using Sparrow.Json;
 using Sparrow.Json.Parsing;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 {
@@ -439,6 +441,40 @@ namespace Mega.WhatsAppAutomator.Infrastructure.Utils
 			iList.CopyTo(array, 0);
 
 			return array.ToList();
+		}
+		
+		public static int Pick(this RandomIntPicker picker)
+		{
+			switch (picker.Mode)
+			{
+				case "MinMax":
+					if (!picker.Min.HasValue || !picker.Max.HasValue)
+					{
+						throw new Exception("Random int picker min or max value is not set");
+					}
+                    
+					return new Random().Next(picker.Min.Value, picker.Max.Value);
+                
+				case "Pool":
+					if (picker.Pool == null || !picker.Pool.Any())
+					{
+						throw new Exception("Random int picker pool is not set");
+					}
+
+					return Random(picker.Pool);
+                
+				case "MinMaxPool":
+					if (picker.MinMaxPool == null || !picker.MinMaxPool.Any())
+					{
+						throw new Exception("Random int picker mixed pool is not set");
+					}
+
+					var minMax = Random(picker.MinMaxPool);
+					return new Random().Next((int)minMax.Min, (int)minMax.Max);
+
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
 		}
 	}
 }

@@ -1,3 +1,5 @@
+using PuppeteerSharp;
+
 namespace Mega.WhatsAppAutomator.Infrastructure
 {
     public class WhatsAppWebMetadata
@@ -17,6 +19,10 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public bool UseCustomUserAgent { get; set; }
         
         public string CustomUserAgent { get; set; }
+        
+        public string[] CustomArgsForHeadless { get; set; }
+        
+        public ViewPortOptions DefaultViewport { get; set; }
 
         public static string SendMessageExpression(string number) =>
             "var link = document.createElement('a');\n" +

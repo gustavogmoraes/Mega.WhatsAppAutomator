@@ -17,30 +17,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 {
     public static class PupeteerMetadata
     {
-        private static string[] CustomsArgsForHeadless => new []
-        {
-            "--proxy-server='direct://'",
-            "--proxy-bypass-list=*",
-            "--use-fake-ui-for-media-stream",
-            "--disable-gpu",
-            "--log-level=3",
-            "--no-default-browser-check",
-            "--disable-infobars",
-            "--disable-notifications",
-            "--disable-web-security",
-            "--disable-site-isolation-trials",
-            "--no-experiments",
-            "--ignore-gpu-blacklist",
-            "--ignore-certificate-errors",
-            "--ignore-certificate-errors-spki-list",
-            "--disable-extensions",
-            "--disable-default-apps",
-            "--enable-features=NetworkService",
-            "--disable-setuid-sandbox",
-            "--no-sandbox",
-            "--window-size=1280, 720",
-            //"--start-maximized"
-        };
+        private static string[] CustomsArgsForHeadless => Config.WhatsAppWebMetadata.CustomArgsForHeadless;
         
         // TODO: Review these and test, the less space we use to store data the better
         private static readonly string[] UserDataExceptions =
@@ -125,9 +102,16 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
         {
             using var session = Stores.MegaWhatsAppApi.OpenSession();
             var client = session.Query<Client>().FirstOrDefault(x => x.Id == EnvironmentConfiguration.ClientId);
-            var attachment = session.Advanced.Attachments.Get(client, $"{EnvironmentConfiguration.InstanceId}.zip");
+            if (client == null)
+            {
+                throw new Exception("Client not found");
+            }
             
-            return attachment;
+            WriteOnConsole("GotClient");
+
+            return session.Advanced.Attachments.Exists(client.Id, $"{EnvironmentConfiguration.InstanceId}.zip")
+                ? session.Advanced.Attachments.Get(client, $"{EnvironmentConfiguration.InstanceId}.zip")
+                : null;
         }
 
         private static void CreateDirectoryWithFullPermission(string browserFilesDir)
@@ -153,21 +137,22 @@ namespace Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport
 
         public static LaunchOptions GetLaunchOptions()
         {
-            return new LaunchOptions
+            var options = new LaunchOptions
             {
                 Headless = Headless,
                 ExecutablePath = ExecutablePath,
                 Args = CustomsArgsForHeadless,
                 UserDataDir = UserDataDir,
                 SlowMo = 1, // If don't do this, sometimes Puppeteer 'eats' the first character of a string on type async
-                DefaultViewport = new ViewPortOptions
-                {
-                    IsLandscape = true,
-                    IsMobile = false,
-                    Width = 1280,
-                    Height = 720
-                }
+                DefaultViewport = Config.WhatsAppWebMetadata.DefaultViewport,
+                                    //IsLandscape = true,
+                                    //     IsMobile = false,
+                                    //     Width = 1280,
+                                    //     Height = 720
+                IgnoredDefaultArgs = new[] { "enable-automation" } //options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"}); 
             };
+            
+            return options;
         }
 
         private static string SolveExecutablePath()

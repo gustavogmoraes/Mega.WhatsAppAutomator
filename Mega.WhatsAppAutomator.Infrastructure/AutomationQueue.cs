@@ -120,8 +120,8 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         public static SendMessageConfiguration ClientConfiguration { get; set; }
         
         public static bool StopBrowser { get; set; }
-        
-        public static Stopwatch Stopwatch { get; set; }
+
+        private static Stopwatch Stopwatch { get; set; }
 
         private static void EvaluatePauses()
         {
@@ -147,14 +147,14 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                     //TODO: After x cycles, clean messages on Whatsapp
                     GetAndSetClientConfig();
                     
-                    if (ClientConfiguration.SendMessagesGroupedByNumber)
-                    {
-                        await SendMessagesGroupingByNumber();
-                    }
-                    else
-                    {
-                        await SendMessagesNoStrategy();
-                    }
+                    // if (ClientConfiguration.SendMessagesGroupedByNumber)
+                    // {
+                    //     await SendMessagesGroupingByNumber();
+                    // }
+                    // else
+                    // {
+                    //     await SendMessagesNoStrategy();
+                    // }
 
                     Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(1, ClientConfiguration.MaximumDelayBetweenCycles)));
                 }
@@ -272,9 +272,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
-                
-                WhatsAppWebTasks.TreatStrangeNumbers(ref number);
-                
+
                 //// During the number exists JS expression evaluation, if number exists the chat page with the number is already opened
                 var (numberExists, triedToOpenChat) = await WhatsAppWebTasks.CheckIfNumberExists(page, number);
                 if (!numberExists)

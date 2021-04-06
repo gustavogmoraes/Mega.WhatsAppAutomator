@@ -8,6 +8,7 @@ using Mega.WhatsAppAutomator.Infrastructure.PupeteerSupport;
 using PuppeteerSharp;
 using Mega.WhatsAppAutomator.Infrastructure.DevOps;
 using Mega.WhatsAppAutomator.Infrastructure.Persistence;
+using PuppeteerSharp.Contrib.Extensions;
 using Raven.Client.Documents;
 using static Mega.WhatsAppAutomator.Infrastructure.Utils.Extensions;
 
@@ -28,9 +29,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
                 await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
             }
             
-            WriteOnConsole($"Trying to launch");
             var launchOptions = PupeteerMetadata.GetLaunchOptions();
-
+            
+            WriteOnConsole($"Trying to launch");
             var browser = await Puppeteer.LaunchAsync(launchOptions);
             var page = await browser.NewPageAsync();
             WriteOnConsole($"Launched, now going to page");
@@ -55,46 +56,73 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         
         public static async Task Start()
         {
-            //// Only necessary if not running on container, as the docker image setup downloads the browser and it's dependencies
-            //// followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
-            var runningInDocker = PupeteerMetadata.AmIRunningInDocker;
-            if (!runningInDocker)
+            try
             {
-                WriteOnConsole("Not running on Docker, checking and downloading browser/dependencies");
-                await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
+                //// Only necessary if not running on container, as the docker image setup downloads the browser and it's dependencies
+                //// followed the PuppeteerSharp's creator guide for docker builds posted at http://www.hardkoded.com/blog/puppeteer-sharp-docker
+                var runningInDocker = PupeteerMetadata.AmIRunningInDocker;
+                if (!runningInDocker)
+                {
+                    WriteOnConsole("Not running on Docker, checking and downloading browser/dependencies");
+                    await new BrowserFetcher(PupeteerMetadata.FetcherOptions).DownloadAsync(BrowserFetcher.DefaultRevision);
+                }
+                
+                // Config
+                await GetMetadata();
+                
+                WriteOnConsole("Trying to get options");
+                var options = PupeteerMetadata.GetLaunchOptions();
+
+                var browser = await Puppeteer.LaunchAsync(options);
+                BrowserRef = browser;
+                
+                var page = (await browser.PagesAsync()).FirstOrDefault();
+                if (page == null)
+                {
+                    throw new Exception("Page is null!");
+                }
+
+                var platform = await page.EvaluateFunctionAsync("() => window.navigator.platform");
+                var userAgent = await page.EvaluateFunctionAsync("() => window.navigator.appVersion");
+                var viewport = await page.EvaluateFunctionAsync(@"() => {
+                    return JSON.stringify({
+                        Width: this.outerWidth,
+                        Height: this.outerHeight
+                    })
+                }");
+                
+                Console.WriteLine($"Platform: {platform}");
+                Console.WriteLine($"User agent: {userAgent}");
+                Console.WriteLine($"Viewport: {viewport}");
+                
+                // Take a look at language, plugins, cookieEnabled, userActivation, webdriver,
+
+                if (Config.WhatsAppWebMetadata.UseCustomUserAgent)
+                {
+                    WriteOnConsole($"Setting user agent to {Config.WhatsAppWebMetadata.CustomUserAgent}");
+                    await page.SetUserAgentAsync(Config.WhatsAppWebMetadata.CustomUserAgent);
+                }
+                
+                WriteOnConsole("Launched, now going to page");
+                await NavigateToWhatsAppWebPage(page);
+
+                var amILogged = await CheckItsLoggedIn(page);
+                WriteOnConsole(amILogged ? "I am logged" : "I AM NOT LOGGED IN");
+                if (!amILogged)
+                {
+                    await GetQrCode(page);
+                    WriteOnConsole("Waiting for QrCode scan");
+                    await WaitForSetup(page, TimeSpan.FromMinutes(5));
+                }
+
+                StartQueue(page);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
             }
             
-            WriteOnConsole("Trying to launch");
-            var browser = await Puppeteer.LaunchAsync(PupeteerMetadata.GetLaunchOptions());
-            BrowserRef = browser;
-
-            await GetMetadata();
-
-            var page = (await browser.PagesAsync()).FirstOrDefault();
-            if (page == null)
-            {
-                throw new Exception("Page is null!");
-            }
-
-            if (Config.WhatsAppWebMetadata.UseCustomUserAgent)
-            {
-                WriteOnConsole($"Setting user agent to {Config.WhatsAppWebMetadata.CustomUserAgent}");
-                await page.SetUserAgentAsync(Config.WhatsAppWebMetadata.CustomUserAgent);
-            }
-            
-            WriteOnConsole("Launched, now going to page");
-            await NavigateToWhatsAppWebPage(page);
-
-            var amILogged = await CheckItsLoggedIn(page);
-            WriteOnConsole(amILogged ? "I am logged" : "I AM NOT LOGGED IN");
-            if (!amILogged)
-            {
-                await GetQrCode(page);
-                WriteOnConsole("Waiting for QrCode scan");
-                await WaitForSetup(page, TimeSpan.FromMinutes(5));
-            }
-
-            StartQueue(page);
         }
 
         private static async Task GetMetadata()

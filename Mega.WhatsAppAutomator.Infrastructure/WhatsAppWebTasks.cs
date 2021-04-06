@@ -27,15 +27,9 @@ namespace Mega.WhatsAppAutomator.Infrastructure
         private static Random Randomizer { get; set; }
         
         //TODO: Review this method
-        public static async Task<bool> SendMessage(Page page, Message message)
+        public static async Task<bool> SendMessage(Page page, Message message)    
         {
-            var messageNumber = message.Number;
-            TreatStrangeNumbers(ref messageNumber);
-
-            var numberExistsAndTried = await CheckIfNumberExists(page, message.Number);
-            var numberExists = numberExistsAndTried.Item1;
-            var triedToOpenChat = numberExistsAndTried.Item2;
-
+            var (numberExists, triedToOpenChat) = await CheckIfNumberExists(page, message.Number);
             if (!numberExists && !triedToOpenChat)
             {
                 await StoreNotDeliveredMessage(message);
@@ -45,9 +39,6 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             await page.ClickAsync(Config.WhatsAppWebMetadata.AcceptInvalidNumber);
             await StoreNotDeliveredMessage(message);
             return false;
-
-			await SendHumanizedMessage(page, message.Text, messageNumber);
-            return true;
         }
 
         public static async Task<bool> SendHumanizedMessageByNumberGroups(Page page, string number, List<string> texts, bool randommicallyDisableHumanization = true)
@@ -137,15 +128,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
 
             await session.SaveChangesAsync();
         }
-        
-        public static void TreatStrangeNumbers(ref string number)
-        {
-            if(number == "+551291828152")
-            {
-                number = "+5512991828152";
-            }
-        }
-        
+
         private static async Task OpenChat(Page page, string number)
         {
             var openChatExpression = WhatsAppWebMetadata.SendMessageExpression(number);
@@ -275,7 +258,7 @@ namespace Mega.WhatsAppAutomator.Infrastructure
             }
         }
 
-        private static string GetFromPool(IList<string> pool)
+        public static string GetFromPool(IList<string> pool)
         {
             var str = $"{pool.Random()}\r\n";
             

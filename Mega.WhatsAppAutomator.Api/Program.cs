@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using Mega.WhatsAppAutomator.Api.ApiUtils;
+using Mega.WhatsAppAutomator.Domain;
+using Mega.WhatsAppAutomator.Domain.Objects;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Mega.WhatsAppAutomator.Infrastructure;
 using Mega.WhatsAppAutomator.Infrastructure.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 
 namespace Mega.WhatsAppAutomator.Api
 {
@@ -19,8 +23,9 @@ namespace Mega.WhatsAppAutomator.Api
             //// and based on args for dll running via "dotnet" command on CLI
             SetRunningConfiguration(args);
             
-            var apiHost = CreateHostBuilder(args).Build();
             
+
+            var apiHost = CreateHostBuilder(args).Build();
             var appLifetime = apiHost.Services.GetRequiredService<IHostApplicationLifetime>();
             
             //// Exit application by graceful exit -> Watchtower
@@ -37,11 +42,11 @@ namespace Mega.WhatsAppAutomator.Api
             return Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStartup<Startup>();
+                    webBuilder = webBuilder.UseStartup<Startup>();
 
                     if (EnvironmentConfiguration.IsRunningOnHeroku)
                     {
-                        webBuilder.UsePort();
+                        webBuilder = webBuilder.UsePort();
                         return;
                     }
 
